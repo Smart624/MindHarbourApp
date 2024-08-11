@@ -14,20 +14,23 @@ import { getUser, createUser } from '../services/firestore';
 interface AuthContextData {
   user: User | null;
   loading: boolean;
+  error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   signOut: () => Promise<void>;
+  clearError: () => void;
 }
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextData | undefined>(undefined);
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, handleAuthStateChanged);
@@ -35,13 +38,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const handleAuthStateChanged = async (firebaseUser: FirebaseUser | null) => {
-    if (firebaseUser) {
-      const userData = await getUser(firebaseUser.uid);
-      setUser(userData);
-    } else {
-      setUser(null);
+    setLoading(true);
+    try {
+      if (firebaseUser) {
+        const userData = await getUser(firebaseUser.uid);
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setError('Failed to fetch user data. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAuthError = (error: AuthError): string => {
@@ -58,15 +68,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<void> => {
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      throw new Error(handleAuthError(error as AuthError));
+      const errorMessage = handleAuthError(error as AuthError);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, userData: Partial<User>) => {
+  const signUp = async (email: string, password: string, userData: Partial<User>): Promise<void> => {
+    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
@@ -74,32 +90,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email,
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
-        userType: 'patient', // Default to patient for now
+        userType: userData.userType || 'patient',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       await createUser(newUser);
       setUser(newUser);
     } catch (error) {
-      throw new Error(handleAuthError(error as AuthError));
+      const errorMessage = handleAuthError(error as AuthError);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
+    setLoading(true);
     try {
       await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
       console.error('Error signing out:', error);
+      setError('Falha ao sair. Por favor, tente novamente.');
       throw new Error('Falha ao sair. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const clearError = (): void => {
+    setError(null);
+  };
+
+  const contextValue: AuthContextData = {
+    user,
+    loading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    clearError,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextData => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
