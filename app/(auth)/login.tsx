@@ -8,9 +8,9 @@ import cores from '../../src/constants/colors';
 import { validarEmail } from '../../src/utils/validation';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const { signIn } = useAuth();
   const router = useRouter();
 

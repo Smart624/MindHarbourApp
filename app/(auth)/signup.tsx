@@ -8,11 +8,11 @@ import cores from '../../src/constants/colors';
 import { validarEmail, validarNome, validarSenha } from '../../src/utils/validation';
 
 export default function SignupScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const { signUp } = useAuth();
   const router = useRouter();
 

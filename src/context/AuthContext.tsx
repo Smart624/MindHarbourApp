@@ -72,7 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const newUser: User = {
         id: userCredential.user.uid,
         email,
-        ...userData,
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
         userType: 'patient', // Default to patient for now
         createdAt: new Date(),
         updatedAt: new Date(),
