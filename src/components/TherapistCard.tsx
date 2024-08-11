@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import cores from '../constants/colors';
 import { Therapist } from '../types/user';
@@ -11,7 +11,7 @@ interface TherapistCardProps {
 }
 
 const TherapistCard: React.FC<TherapistCardProps> = ({ therapist, onBookAppointment }) => {
-  const { id, firstName, lastName, specialization, bio, languages } = therapist;
+  const { id, firstName, lastName, specialization, bio, languages, licenseNumber } = therapist;
 
   return (
     <View style={styles.card}>
@@ -23,6 +23,7 @@ const TherapistCard: React.FC<TherapistCardProps> = ({ therapist, onBookAppointm
         <View style={styles.headerInfo}>
           <Text style={styles.name}>{`${firstName} ${lastName}`}</Text>
           <Text style={styles.specialization}>{specialization}</Text>
+          <Text style={styles.licenseNumber}>{licenseNumber}</Text>
         </View>
       </View>
       <Text style={styles.bio} numberOfLines={3}>{bio}</Text>
@@ -74,6 +75,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: cores.desativado,
     marginTop: 4,
+  },
+  licenseNumber: {
+    fontSize: 12,
+    color: cores.desativado,
+    marginTop: 2,
   },
   bio: {
     fontSize: 14,
