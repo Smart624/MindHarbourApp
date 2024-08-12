@@ -1,10 +1,12 @@
+// App.tsx
+
 import React from 'react';
 import { useColorScheme } from 'react-native';
 import { SplashScreen, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { AuthProvider } from './src/context/AuthContext';
 
-export default function RootLayout() {
+export default function App() {
   const [loaded, error] = useFonts({
     'SpaceMono-Regular': require('./assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -23,18 +25,20 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <AuthProvider>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
-    </AuthProvider>
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+    </Stack>
   );
 }

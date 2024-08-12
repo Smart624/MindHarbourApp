@@ -1,4 +1,5 @@
-import { auth, firestore } from './firebaseConfig';
+// src/services/auth.ts
+
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -9,6 +10,8 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { User, Patient, Therapist } from '../types/user';
+
+import { auth, firestore } from './firebaseConfig';
 
 export const cadastrar = async (
   email: string, 

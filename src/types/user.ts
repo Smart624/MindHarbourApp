@@ -1,3 +1,5 @@
+// src/types/user.ts
+
 export type UserType = 'patient' | 'therapist';
 
 export interface User {

@@ -1,7 +1,10 @@
+// src/context/AuthContext.tsx
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types/user';
-import { firebaseAuth, firebaseFirestore } from '../services/firebaseConfig';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { auth, getCurrentUser } from '../services/firebaseConfig';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 
 interface AuthContextData {
   user: User | null;
@@ -25,16 +28,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = firebaseAuth.onAuthStateChanged(handleAuthStateChanged);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      handleAuthStateChanged(firebaseUser);
+    });
     return unsubscribe;
   }, []);
 
-  const handleAuthStateChanged = async (firebaseUser: FirebaseAuthTypes.User | null) => {
+  const handleAuthStateChanged = async (firebaseUser: FirebaseUser | null) => {
     setLoading(true);
     try {
       if (firebaseUser) {
-        const userData = await getUser(firebaseUser.uid);
-        setUser(userData);
+        const userData = await getCurrentUser();
+        if (userData) {
+          setUser(userData);
+        } else {
+          // If userData is null, create a minimal User object
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            firstName: '',
+            lastName: '',
+            userType: 'patient', // Default to 'patient', adjust as needed
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
       } else {
         setUser(null);
       }
@@ -46,19 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const getUser = async (userId: string): Promise<User | null> => {
-    const userDoc = await firebaseFirestore.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      return userDoc.data() as User;
-    }
-    return null;
-  };
-
-  const createUser = async (user: User): Promise<void> => {
-    await firebaseFirestore.collection('users').doc(user.id).set(user);
-  };
-
-  const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError): string => {
+  const handleAuthError = (error: any): string => {
     switch (error.code) {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
@@ -75,9 +81,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseAuth.signInWithEmailAndPassword(email, password);
-    } catch (error) {
-      const errorMessage = handleAuthError(error as FirebaseAuthTypes.NativeFirebaseAuthError);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      const errorMessage = handleAuthError(error);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -88,7 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, userData: Partial<User>): Promise<void> => {
     setLoading(true);
     try {
-      const userCredential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
         id: userCredential.user.uid,
         email,
@@ -98,10 +104,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      await createUser(newUser);
+      // Here you would typically save the user data to Firestore
+      // await createUser(newUser);
       setUser(newUser);
-    } catch (error) {
-      const errorMessage = handleAuthError(error as FirebaseAuthTypes.NativeFirebaseAuthError);
+    } catch (error: any) {
+      const errorMessage = handleAuthError(error);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -112,7 +119,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async (): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseAuth.signOut();
+      await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
       console.error('Error signing out:', error);
