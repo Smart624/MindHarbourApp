@@ -4,7 +4,8 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types/user';
 import { auth, getCurrentUser } from '../services/firebaseConfig';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextData {
   user: User | null;
@@ -16,84 +17,44 @@ interface AuthContextData {
   clearError: () => void;
 }
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-const AuthContext = createContext<AuthContextData | undefined>(undefined);
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      handleAuthStateChanged(firebaseUser);
-    });
-    return unsubscribe;
+    const loadUser = async () => {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
-  const handleAuthStateChanged = async (firebaseUser: FirebaseUser | null) => {
-    setLoading(true);
+  const signIn = async (email: string, password: string) => {
     try {
-      if (firebaseUser) {
-        const userData = await getCurrentUser();
-        if (userData) {
-          setUser(userData);
-        } else {
-          // If userData is null, create a minimal User object
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            firstName: '',
-            lastName: '',
-            userType: 'patient', // Default to 'patient', adjust as needed
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-        }
-      } else {
-        setUser(null);
+      setLoading(true);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userData = await getCurrentUser();
+      if (userData) {
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
       }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      setError('Failed to fetch user data. Please try again.');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAuthError = (error: any): string => {
-    switch (error.code) {
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-        return 'E-mail ou senha incorretos.';
-      case 'auth/email-already-in-use':
-        return 'Este e-mail já está em uso.';
-      case 'auth/weak-password':
-        return 'A senha é muito fraca.';
-      default:
-        return 'Ocorreu um erro. Por favor, tente novamente.';
-    }
-  };
-
-  const signIn = async (email: string, password: string): Promise<void> => {
-    setLoading(true);
+  const signUp = async (email: string, password: string, userData: Partial<User>) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      const errorMessage = handleAuthError(error);
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, userData: Partial<User>): Promise<void> => {
-    setLoading(true);
-    try {
+      setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
         id: userCredential.user.uid,
@@ -104,56 +65,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      // Here you would typically save the user data to Firestore
-      // await createUser(newUser);
       setUser(newUser);
-    } catch (error: any) {
-      const errorMessage = handleAuthError(error);
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      await AsyncStorage.setItem('user', JSON.stringify(newUser));
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async (): Promise<void> => {
-    setLoading(true);
+  const signOut = async () => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      setError('Falha ao sair. Por favor, tente novamente.');
-      throw new Error('Falha ao sair. Por favor, tente novamente.');
-    } finally {
-      setLoading(false);
+      await AsyncStorage.removeItem('user');
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
-  const clearError = (): void => {
-    setError(null);
-  };
-
-  const contextValue: AuthContextData = {
-    user,
-    loading,
-    error,
-    signIn,
-    signUp,
-    signOut,
-    clearError,
-  };
+  const clearError = () => setError(null);
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut, clearError }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextData => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

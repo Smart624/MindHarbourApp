@@ -1,10 +1,10 @@
 // src/services/firebaseConfig.ts
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../types/user';  // Import your custom User type
+import { User } from '../types/user';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAng0af08bQTYY7VXzHUhRhzV211omIPWg",
@@ -28,26 +28,6 @@ setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error('Error setting persistence:', error);
   });
-
-// Listen for auth state changes and store user info in AsyncStorage
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    // User is signed in
-    const userData: User = {
-      id: user.uid,
-      email: user.email || '',
-      firstName: '',  // You might want to fetch this from Firestore
-      lastName: '',   // You might want to fetch this from Firestore
-      userType: 'patient',  // Default value, adjust as needed
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    AsyncStorage.setItem('user', JSON.stringify(userData));
-  } else {
-    // User is signed out
-    AsyncStorage.removeItem('user');
-  }
-});
 
 // Function to get the current user from AsyncStorage
 export const getCurrentUser = async (): Promise<User | null> => {

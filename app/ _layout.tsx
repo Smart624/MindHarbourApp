@@ -1,30 +1,16 @@
+// app/_layout.tsx
+
 import React from 'react';
 import { Stack } from 'expo-router';
-import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import Loading from '../src/components/common/Loading';
-
-function RootLayoutNav() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  return (
-    <Stack>
-      {user ? (
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      ) : (
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      )}
-    </Stack>
-  );
-}
+import { AuthProvider } from '../src/context/AuthContext';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      </Stack>
     </AuthProvider>
   );
 }
