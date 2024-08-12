@@ -3,9 +3,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import Button from '../../src/components/common/Button';
 import cores from '../../src/constants/colors';
+import Loading from '../../src/components/common/Loading';
 
 export default function DashboardScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <View style={styles.container}>

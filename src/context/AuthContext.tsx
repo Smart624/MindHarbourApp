@@ -1,15 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User } from '../types/user';
-import { auth } from '../services/firebaseConfig';
-import { 
-  onAuthStateChanged, 
-  User as FirebaseUser,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  AuthError
-} from 'firebase/auth';
-import { getUser, createUser } from '../services/firestore';
+import { firebaseAuth, firebaseFirestore } from '../services/firebaseConfig';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 interface AuthContextData {
   user: User | null;
@@ -33,11 +25,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, handleAuthStateChanged);
+    const unsubscribe = firebaseAuth.onAuthStateChanged(handleAuthStateChanged);
     return unsubscribe;
   }, []);
 
-  const handleAuthStateChanged = async (firebaseUser: FirebaseUser | null) => {
+  const handleAuthStateChanged = async (firebaseUser: FirebaseAuthTypes.User | null) => {
     setLoading(true);
     try {
       if (firebaseUser) {
@@ -54,7 +46,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const handleAuthError = (error: AuthError): string => {
+  const getUser = async (userId: string): Promise<User | null> => {
+    const userDoc = await firebaseFirestore.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      return userDoc.data() as User;
+    }
+    return null;
+  };
+
+  const createUser = async (user: User): Promise<void> => {
+    await firebaseFirestore.collection('users').doc(user.id).set(user);
+  };
+
+  const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError): string => {
     switch (error.code) {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
@@ -71,9 +75,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await firebaseAuth.signInWithEmailAndPassword(email, password);
     } catch (error) {
-      const errorMessage = handleAuthError(error as AuthError);
+      const errorMessage = handleAuthError(error as FirebaseAuthTypes.NativeFirebaseAuthError);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -84,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signUp = async (email: string, password: string, userData: Partial<User>): Promise<void> => {
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
       const newUser: User = {
         id: userCredential.user.uid,
         email,
@@ -97,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await createUser(newUser);
       setUser(newUser);
     } catch (error) {
-      const errorMessage = handleAuthError(error as AuthError);
+      const errorMessage = handleAuthError(error as FirebaseAuthTypes.NativeFirebaseAuthError);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -108,7 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async (): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseSignOut(auth);
+      await firebaseAuth.signOut();
       setUser(null);
     } catch (error) {
       console.error('Error signing out:', error);

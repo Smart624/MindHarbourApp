@@ -1,32 +1,20 @@
-import { firestore } from './firebaseConfig';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  getDocs,
-  DocumentData,
-  QueryDocumentSnapshot,
-  WithFieldValue,
-  DocumentReference,
-  Timestamp
-} from 'firebase/firestore';
+import { firebaseFirestore } from './firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
 import { User, Patient, Therapist, UserType } from '../types/user';
 import { Appointment } from '../types/appointment';
 import { Chat, Message } from '../types/chat';
 import { translate } from '../utils/i18n';
 
-const convertToFirestoreData = <T extends DocumentData>(data: T): WithFieldValue<T> => {
-  const converted: Record<string, any> = { ...data };
+type FirestoreData = { [key: string]: any };
+
+const convertToFirestoreData = <T extends FirestoreData>(data: T): T => {
+  const converted: FirestoreData = { ...data };
   for (const key in converted) {
     if (converted[key] instanceof Date) {
-      converted[key] = Timestamp.fromDate(converted[key] as Date);
+      converted[key] = firestore.Timestamp.fromDate(converted[key] as Date);
     }
   }
-  return converted as WithFieldValue<T>;
+  return converted as T;
 };
 
 const handleFirestoreError = (error: unknown, operation: string): never => {
@@ -36,8 +24,8 @@ const handleFirestoreError = (error: unknown, operation: string): never => {
 
 export const createUser = async (user: User): Promise<void> => {
   try {
-    const userRef = doc(firestore, 'users', user.id) as DocumentReference<User>;
-    await setDoc(userRef, convertToFirestoreData(user));
+    const userRef = firebaseFirestore.doc(`users/${user.id}`);
+    await userRef.set(convertToFirestoreData(user));
   } catch (error) {
     handleFirestoreError(error, 'create user');
   }
@@ -45,13 +33,13 @@ export const createUser = async (user: User): Promise<void> => {
 
 export const getUser = async (userId: string): Promise<User | null> => {
   try {
-    const userDoc = await getDoc(doc(firestore, 'users', userId) as DocumentReference<User>);
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      if (userData.createdAt instanceof Timestamp) {
+    const userDoc = await firebaseFirestore.doc(`users/${userId}`).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data() as User;
+      if (userData.createdAt instanceof firestore.Timestamp) {
         userData.createdAt = userData.createdAt.toDate();
       }
-      if (userData.updatedAt instanceof Timestamp) {
+      if (userData.updatedAt instanceof firestore.Timestamp) {
         userData.updatedAt = userData.updatedAt.toDate();
       }
       return userData;
@@ -64,8 +52,8 @@ export const getUser = async (userId: string): Promise<User | null> => {
 
 export const updateUser = async (userId: string, data: Partial<User>): Promise<void> => {
   try {
-    const userRef = doc(firestore, 'users', userId) as DocumentReference<User>;
-    await updateDoc(userRef, convertToFirestoreData(data));
+    const userRef = firebaseFirestore.doc(`users/${userId}`);
+    await userRef.update(convertToFirestoreData(data));
   } catch (error) {
     handleFirestoreError(error, 'update user');
   }
@@ -73,8 +61,8 @@ export const updateUser = async (userId: string, data: Partial<User>): Promise<v
 
 export const createPatient = async (patient: Patient): Promise<void> => {
   try {
-    const patientRef = doc(firestore, 'patients', patient.id) as DocumentReference<Patient>;
-    await setDoc(patientRef, convertToFirestoreData(patient));
+    const patientRef = firebaseFirestore.doc(`patients/${patient.id}`);
+    await patientRef.set(convertToFirestoreData(patient));
   } catch (error) {
     handleFirestoreError(error, 'create patient');
   }
@@ -82,8 +70,8 @@ export const createPatient = async (patient: Patient): Promise<void> => {
 
 export const createTherapist = async (therapist: Therapist): Promise<void> => {
   try {
-    const therapistRef = doc(firestore, 'therapists', therapist.id) as DocumentReference<Therapist>;
-    await setDoc(therapistRef, convertToFirestoreData(therapist));
+    const therapistRef = firebaseFirestore.doc(`therapists/${therapist.id}`);
+    await therapistRef.set(convertToFirestoreData(therapist));
   } catch (error) {
     handleFirestoreError(error, 'create therapist');
   }
@@ -91,14 +79,14 @@ export const createTherapist = async (therapist: Therapist): Promise<void> => {
 
 export const getTherapists = async (): Promise<Therapist[]> => {
   try {
-    const therapistsQuery = query(collection(firestore, 'therapists'));
-    const therapistDocs = await getDocs(therapistsQuery);
+    const therapistsQuery = firebaseFirestore.collection('therapists');
+    const therapistDocs = await therapistsQuery.get();
     return therapistDocs.docs.map(doc => {
       const therapistData = doc.data() as Therapist;
-      if (therapistData.createdAt instanceof Timestamp) {
+      if (therapistData.createdAt instanceof firestore.Timestamp) {
         therapistData.createdAt = therapistData.createdAt.toDate();
       }
-      if (therapistData.updatedAt instanceof Timestamp) {
+      if (therapistData.updatedAt instanceof firestore.Timestamp) {
         therapistData.updatedAt = therapistData.updatedAt.toDate();
       }
       return therapistData;
@@ -110,8 +98,8 @@ export const getTherapists = async (): Promise<Therapist[]> => {
 
 export const createAppointment = async (appointment: Appointment): Promise<void> => {
   try {
-    const appointmentRef = doc(firestore, 'appointments', appointment.id) as DocumentReference<Appointment>;
-    await setDoc(appointmentRef, convertToFirestoreData(appointment));
+    const appointmentRef = firebaseFirestore.doc(`appointments/${appointment.id}`);
+    await appointmentRef.set(convertToFirestoreData(appointment));
   } catch (error) {
     handleFirestoreError(error, 'create appointment');
   }
@@ -120,14 +108,14 @@ export const createAppointment = async (appointment: Appointment): Promise<void>
 export const getAppointments = async (userId: string, userType: UserType): Promise<Appointment[]> => {
   try {
     const fieldName = userType === 'patient' ? 'patientId' : 'therapistId';
-    const appointmentsQuery = query(collection(firestore, 'appointments'), where(fieldName, '==', userId));
-    const appointmentDocs = await getDocs(appointmentsQuery);
+    const appointmentsQuery = firebaseFirestore.collection('appointments').where(fieldName, '==', userId);
+    const appointmentDocs = await appointmentsQuery.get();
     return appointmentDocs.docs.map(doc => {
       const appointmentData = doc.data() as Appointment;
-      if (appointmentData.startTime instanceof Timestamp) {
+      if (appointmentData.startTime instanceof firestore.Timestamp) {
         appointmentData.startTime = appointmentData.startTime.toDate();
       }
-      if (appointmentData.endTime instanceof Timestamp) {
+      if (appointmentData.endTime instanceof firestore.Timestamp) {
         appointmentData.endTime = appointmentData.endTime.toDate();
       }
       return appointmentData;
@@ -139,8 +127,8 @@ export const getAppointments = async (userId: string, userType: UserType): Promi
 
 export const createChat = async (chat: Chat): Promise<void> => {
   try {
-    const chatRef = doc(firestore, 'chats', chat.id) as DocumentReference<Chat>;
-    await setDoc(chatRef, convertToFirestoreData(chat));
+    const chatRef = firebaseFirestore.doc(`chats/${chat.id}`);
+    await chatRef.set(convertToFirestoreData(chat));
   } catch (error) {
     handleFirestoreError(error, 'create chat');
   }
@@ -148,17 +136,14 @@ export const createChat = async (chat: Chat): Promise<void> => {
 
 export const getChats = async (userId: string): Promise<Chat[]> => {
   try {
-    const chatsQuery = query(
-      collection(firestore, 'chats'),
-      where('patientId', '==', userId)
-    );
-    const chatDocs = await getDocs(chatsQuery);
+    const chatsQuery = firebaseFirestore.collection('chats').where('patientId', '==', userId);
+    const chatDocs = await chatsQuery.get();
     return chatDocs.docs.map(doc => {
       const chatData = doc.data() as Chat;
-      if (chatData.createdAt instanceof Timestamp) {
+      if (chatData.createdAt instanceof firestore.Timestamp) {
         chatData.createdAt = chatData.createdAt.toDate();
       }
-      if (chatData.lastMessageAt instanceof Timestamp) {
+      if (chatData.lastMessageAt instanceof firestore.Timestamp) {
         chatData.lastMessageAt = chatData.lastMessageAt.toDate();
       }
       return chatData;
@@ -170,8 +155,8 @@ export const getChats = async (userId: string): Promise<Chat[]> => {
 
 export const createMessage = async (message: Message): Promise<void> => {
   try {
-    const messageRef = doc(firestore, 'messages', message.id) as DocumentReference<Message>;
-    await setDoc(messageRef, convertToFirestoreData(message));
+    const messageRef = firebaseFirestore.doc(`messages/${message.id}`);
+    await messageRef.set(convertToFirestoreData(message));
   } catch (error) {
     handleFirestoreError(error, 'create message');
   }
@@ -179,11 +164,11 @@ export const createMessage = async (message: Message): Promise<void> => {
 
 export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {
-    const messagesQuery = query(collection(firestore, 'messages'), where('chatId', '==', chatId));
-    const messageDocs = await getDocs(messagesQuery);
+    const messagesQuery = firebaseFirestore.collection('messages').where('chatId', '==', chatId);
+    const messageDocs = await messagesQuery.get();
     return messageDocs.docs.map(doc => {
       const messageData = doc.data() as Message;
-      if (messageData.sentAt instanceof Timestamp) {
+      if (messageData.sentAt instanceof firestore.Timestamp) {
         messageData.sentAt = messageData.sentAt.toDate();
       }
       return messageData;

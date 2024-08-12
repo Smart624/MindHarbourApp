@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useColorScheme } from 'react-native';
 import { SplashScreen, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -9,11 +9,11 @@ export default function RootLayout() {
     'SpaceMono-Regular': require('./assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
@@ -33,6 +33,7 @@ function RootLayoutNav() {
     <AuthProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );

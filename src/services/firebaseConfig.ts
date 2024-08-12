@@ -1,9 +1,6 @@
-
-// src/services/firebaseConfig.ts
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import app from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAng0af08bQTYY7VXzHUhRhzV211omIPWg",
@@ -15,14 +12,13 @@ const firebaseConfig = {
   measurementId: "G-806Q5R0P6E"
 };
 
+// Initialize Firebase if it hasn't been initialized yet
+if (!app.apps.length) {
+  app.initializeApp(firebaseConfig);
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Get Firebase services
+export const firebaseAuth = auth();
+export const firebaseFirestore = firestore();
 
-
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const firestore = getFirestore(app);
-export const analytics = getAnalytics(app);
-
-export default app;
+export default { auth, firestore };
