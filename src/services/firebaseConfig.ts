@@ -1,5 +1,3 @@
-// src/services/firebaseConfig.ts
-
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
@@ -20,20 +18,31 @@ let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
+try {
+  if (getApps().length === 0) {
+    console.log('Initializing Firebase app...');
+    app = initializeApp(firebaseConfig);
+    console.log('Firebase app initialized successfully.');
+  } else {
+    console.log('Firebase app already initialized. Using existing app.');
+    app = getApps()[0];
+  }
+
+  console.log('Initializing Firebase Auth...');
   auth = getAuth(app);
-} else {
-  app = getApps()[0];
-  auth = getAuth(app);
+  console.log('Firebase Auth initialized successfully.');
+
+  console.log('Initializing Firestore...');
+  firestore = getFirestore(app);
+  console.log('Firestore initialized successfully.');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
 }
 
-firestore = getFirestore(app);
-
-// Function to get the current user from AsyncStorage
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const userString = await AsyncStorage.getItem('user');
+    console.log('Current user from AsyncStorage:', userString);
     return userString ? JSON.parse(userString) as User : null;
   } catch (error) {
     console.error('Error getting current user from AsyncStorage:', error);

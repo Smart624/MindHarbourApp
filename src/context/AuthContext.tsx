@@ -1,13 +1,11 @@
-// src/context/AuthContext.tsx
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { User as FirebaseUser, Auth } from 'firebase/auth';
 import { User } from '../types/user';
 import { auth, firestore, getCurrentUser } from '../services/firebaseConfig';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useSegments } from 'expo-router';
 import { doc, setDoc } from 'firebase/firestore';
+
+console.log('AuthContext.tsx is being executed');
 
 interface AuthContextData {
   user: User | null;
@@ -22,40 +20,37 @@ interface AuthContextData {
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  console.log('AuthProvider is rendering');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const segments = useSegments();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth as Auth, async (firebaseUser) => {
+    console.log('AuthProvider useEffect is running');
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      console.log('Auth state changed. Firebase user:', firebaseUser);
       if (firebaseUser) {
         const userData = await getCurrentUser();
+        console.log('Current user data:', userData);
         setUser(userData);
       } else {
+        console.log('No user logged in.');
         setUser(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('Unsubscribing from auth state changes.');
+      unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.replace('/(app)/(patient)/dashboard');
-      } else {
-        router.replace('/login');
-      }
-    }
-  }, [user, loading]);
-
   const signIn = async (email: string, password: string) => {
+    console.log('signIn function called');
     try {
       setLoading(true);
-      const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const userData = await getCurrentUser();
       if (userData) {
         setUser(userData);
@@ -69,9 +64,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    console.log('signUp function called');
     try {
       setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(auth as Auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser: User = {
         id: userCredential.user.uid,
         email,
@@ -86,15 +82,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
     } catch (err: any) {
       setError(err.message);
-      throw err; // Re-throw the error so it can be caught in the signup screen
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
+    console.log('signOut function called');
     try {
-      await firebaseSignOut(auth as Auth);
+      await firebaseSignOut(auth);
       setUser(null);
       await AsyncStorage.removeItem('user');
     } catch (err: any) {
@@ -102,19 +99,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const clearError = () => setError(null);
+  const clearError = () => {
+    console.log('clearError function called');
+    setError(null);
+  };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut, clearError }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const contextValue: AuthContextData = {
+    user,
+    loading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    clearError,
+  };
+
+  console.log('AuthProvider contextValue:', contextValue);
+
+  useEffect(() => {
+    console.log('AuthProvider children are being rendered');
+  }, []);
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
+  console.log('useAuth hook called');
   const context = useContext(AuthContext);
   if (!context) {
+    console.error('useAuth must be used within an AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  console.log('useAuth returning context:', context);
   return context;
 };
+
+console.log('AuthContext.tsx fully loaded');
