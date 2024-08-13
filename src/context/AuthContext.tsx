@@ -4,8 +4,9 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types/user';
 import { auth, getCurrentUser } from '../services/firebaseConfig';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter, useSegments } from 'expo-router';
 
 interface AuthContextData {
   user: User | null;
@@ -23,18 +24,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
-    const loadUser = async () => {
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } else {
+        setUser(null);
       }
       setLoading(false);
-    };
+    });
 
-    loadUser();
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        // User is signed in, redirect to the app
+        router.replace('/(app)/(patient)/dashboard');
+      } else {
+        // No user is signed in, redirect to the login page
+        router.replace('/login');
+      }
+    }
+  }, [user, loading]);
 
   const signIn = async (email: string, password: string) => {
     try {

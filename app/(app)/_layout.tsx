@@ -1,26 +1,25 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import Loading from '../../src/components/common/Loading';
 
 export default function AppLayout() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (!user) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs>
-      {user?.userType === 'patient' ? (
-        <>
-          <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
-          <Tabs.Screen name="book-appointment" options={{ title: 'Book Appointment' }} />
-          <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
-          <Tabs.Screen name="therapists" options={{ title: 'Therapists' }} />
-        </>
-      ) : (
-        <>
-          <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
-          <Tabs.Screen name="appointments" options={{ title: 'Appointments' }} />
-          <Tabs.Screen name="availability" options={{ title: 'Availability' }} />
-        </>
-      )}
+      <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
+      <Tabs.Screen name="book-appointment" options={{ title: 'Book Appointment' }} />
+      <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
+      <Tabs.Screen name="therapists" options={{ title: 'Therapists' }} />
     </Tabs>
   );
 }

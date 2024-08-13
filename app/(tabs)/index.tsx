@@ -4,12 +4,17 @@ import { useAuth } from '../../src/context/AuthContext';
 import Button from '../../src/components/common/Button';
 import cores from '../../src/constants/colors';
 import Loading from '../../src/components/common/Loading';
+import { Redirect } from 'expo-router';
 
 export default function DashboardScreen() {
   const { user, signOut, loading } = useAuth();
 
   if (loading) {
     return <Loading />;
+  }
+
+  if (!user) {
+    return <Redirect href="/login" />;
   }
 
   return (
