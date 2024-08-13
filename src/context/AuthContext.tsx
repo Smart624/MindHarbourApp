@@ -1,12 +1,13 @@
 // src/context/AuthContext.tsx
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
+import { User as FirebaseUser, Auth } from 'firebase/auth';
 import { User } from '../types/user';
-import { auth, getCurrentUser } from '../services/firebaseConfig';
+import { auth, firestore, getCurrentUser } from '../services/firebaseConfig';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useSegments } from 'expo-router';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface AuthContextData {
   user: User | null;
@@ -28,7 +29,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const segments = useSegments();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth as Auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userData = await getCurrentUser();
         setUser(userData);
@@ -44,10 +45,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // User is signed in, redirect to the app
         router.replace('/(app)/(patient)/dashboard');
       } else {
-        // No user is signed in, redirect to the login page
         router.replace('/login');
       }
     }
@@ -56,7 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password);
       const userData = await getCurrentUser();
       if (userData) {
         setUser(userData);
@@ -72,7 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
     try {
       setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth as Auth, email, password);
       const newUser: User = {
         id: userCredential.user.uid,
         email,
@@ -82,10 +81,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      await setDoc(doc(firestore, 'users', newUser.id), newUser);
       setUser(newUser);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
     } catch (err: any) {
       setError(err.message);
+      throw err; // Re-throw the error so it can be caught in the signup screen
     } finally {
       setLoading(false);
     }
@@ -93,7 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      await firebaseSignOut(auth as Auth);
       setUser(null);
       await AsyncStorage.removeItem('user');
     } catch (err: any) {

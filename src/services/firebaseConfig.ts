@@ -1,8 +1,11 @@
 // src/services/firebaseConfig.ts
 
-import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+
+
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, initializeAuth, Auth } from 'firebase/auth';
+import { getReactNativePersistence } from 'firebase/auth/react-native';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types/user';
 
@@ -16,18 +19,21 @@ const firebaseConfig = {
   measurementId: "G-806Q5R0P6E"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const firestore = getFirestore(app);
+let app: FirebaseApp;
+let auth: Auth;
+let firestore: Firestore;
 
-// Set persistence to local
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log('Persistence set to local');
-  })
-  .catch((error) => {
-    console.error('Error setting persistence:', error);
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
   });
+} else {
+  app = getApps()[0];
+  auth = getAuth(app);
+}
+
+firestore = getFirestore(app);
 
 // Function to get the current user from AsyncStorage
 export const getCurrentUser = async (): Promise<User | null> => {

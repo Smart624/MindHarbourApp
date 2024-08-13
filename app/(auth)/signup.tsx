@@ -1,3 +1,5 @@
+// app/(auth)/signup.tsx
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -6,6 +8,11 @@ import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
 import cores from '../../src/constants/colors';
 import { validarEmail, validarNome, validarSenha } from '../../src/utils/validation';
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return String(error);
+};
 
 export default function SignupScreen() {
   const [email, setEmail] = useState<string>('');
@@ -35,7 +42,9 @@ export default function SignupScreen() {
       await signUp(email, password, { firstName, lastName });
       router.replace('/(tabs)');
     } catch (err) {
-      Alert.alert('Erro', 'Falha no cadastro. Por favor, tente novamente.');
+      console.error('Signup error:', err);
+      const errorMessage = getErrorMessage(err);
+      Alert.alert('Erro', `Falha no cadastro: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
