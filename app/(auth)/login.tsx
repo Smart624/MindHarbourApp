@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/context/AuthContext';
 import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
 import cores from '../../src/constants/colors';
 import { validarEmail } from '../../src/utils/validation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../src/services/firebaseConfig';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const { signIn } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -26,9 +27,9 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await signIn(email, password);
-      router.replace('/(tabs)');
-    } catch (err) {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace('/(app)/(tabs)');
+    } catch (error: any) {
       Alert.alert('Erro', 'Falha no login. Por favor, verifique suas credenciais.');
     } finally {
       setLoading(false);
