@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import Button from '../../src/components/common/Button';
-import cores from '../../src/constants/colors';
 import Loading from '../../src/components/common/Loading';
 import { Redirect } from 'expo-router';
+import cores from '../../src/constants/colors';
 
 export default function DashboardScreen() {
   const { user, signOut, loading } = useAuth();
@@ -20,7 +20,7 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo ao Dashboard</Text>
-      <Text style={styles.subtitle}>Olá, {user?.firstName || 'Usuário'}!</Text>
+      <Text style={styles.subtitle}>Olá, {user.firstName || 'Usuário'}!</Text>
       <Button title="Sair" onPress={signOut} />
     </View>
   );

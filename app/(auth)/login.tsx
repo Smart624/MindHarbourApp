@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
+import { entrar } from '../../src/services/auth';
 import cores from '../../src/constants/colors';
-import { validarEmail } from '../../src/utils/validation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../src/services/firebaseConfig';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -16,21 +14,11 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!validarEmail(email)) {
-      Alert.alert('Erro', 'Por favor, insira um e-mail válido.');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace('/(app)/(tabs)');
+      await entrar(email, password);
     } catch (error: any) {
-      Alert.alert('Erro', 'Falha no login. Por favor, verifique suas credenciais.');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -38,26 +26,28 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo ao MindHarbor</Text>
+      <Text style={styles.title}>Welcome to MindHarbor</Text>
       <Input
-        label="E-mail"
+        label="Email"
         value={email}
         onChangeText={setEmail}
-        placeholder="Seu e-mail"
+        placeholder="Your email"
         keyboardType="email-address"
         autoCapitalize="none"
       />
       <Input
-        label="Senha"
+        label="Password"
         value={password}
         onChangeText={setPassword}
-        placeholder="Sua senha"
+        placeholder="Your password"
         secureTextEntry
       />
-      <Button title="Entrar" onPress={handleLogin} loading={loading} />
-      <TouchableOpacity onPress={() => router.push('/signup')}>
-        <Text style={styles.signupText}>Não tem uma conta? Cadastre-se</Text>
-      </TouchableOpacity>
+      <Button title="Login" onPress={handleLogin} loading={loading} />
+      <Button 
+        title="Sign Up" 
+        onPress={() => router.push('/signup')} 
+        variant="outline"
+      />
     </View>
   );
 }
@@ -75,10 +65,5 @@ const styles = StyleSheet.create({
     color: cores.texto,
     marginBottom: 20,
     textAlign: 'center',
-  },
-  signupText: {
-    color: cores.primaria,
-    textAlign: 'center',
-    marginTop: 20,
   },
 });

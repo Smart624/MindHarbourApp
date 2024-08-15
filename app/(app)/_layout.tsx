@@ -16,10 +16,17 @@ export default function AppLayout() {
 
   return (
     <Tabs>
-      <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
-      <Tabs.Screen name="book-appointment" options={{ title: 'Book Appointment' }} />
-      <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
-      <Tabs.Screen name="therapists" options={{ title: 'Therapists' }} />
+      {user.userType === 'patient' ? (
+        <Tabs.Screen 
+          name="(patient)" 
+          options={{ headerShown: false }}
+        />
+      ) : (
+        <Tabs.Screen 
+          name="(therapist)" 
+          options={{ headerShown: false }}
+        />
+      )}
     </Tabs>
   );
 }
