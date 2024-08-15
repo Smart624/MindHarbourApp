@@ -5,6 +5,7 @@ import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
 import { entrar } from '../../src/services/auth';
 import cores from '../../src/constants/colors';
+import { useGlobalAuthState } from '../../src/globalAuthState';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -12,13 +13,17 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
+  const { setUser } = useGlobalAuthState();
 
   const handleLogin = async () => {
     setLoading(true);
     try {
-      await entrar(email, password);
+      const user = await entrar(email, password);
+      setUser(user);
+      router.replace('/(app)');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Login error:', error);
+      Alert.alert('Error', error.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -43,11 +48,6 @@ export default function LoginScreen() {
         secureTextEntry
       />
       <Button title="Login" onPress={handleLogin} loading={loading} />
-      <Button 
-        title="Sign Up" 
-        onPress={() => router.push('/signup')} 
-        variant="outline"
-      />
     </View>
   );
 }
