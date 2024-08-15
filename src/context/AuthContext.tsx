@@ -1,13 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types/user';
 import { auth, firestore } from '../services/firebaseConfig';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useRouter, useSegments, useRootNavigationState } from 'expo-router';
 
 interface AuthContextData {
   user: User | null;
   loading: boolean;
+  signIn: (user: User) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -16,51 +17,53 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const segments = useSegments();
-  const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (!navigationState?.key) return;
+    const loadUser = async () => {
+      const storedUser = await AsyncStorage.getItem('@MindHarbor:user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      setLoading(false);
+    };
+
+    loadUser();
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
         if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+          const userData = userDoc.data() as User;
+          setUser(userData);
+          await AsyncStorage.setItem('@MindHarbor:user', JSON.stringify(userData));
         }
       } else {
         setUser(null);
+        await AsyncStorage.removeItem('@MindHarbor:user');
       }
       setLoading(false);
     });
 
     return unsubscribe;
-  }, [navigationState?.key]);
+  }, []);
 
-  useEffect(() => {
-    if (loading) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!user && !inAuthGroup) {
-      router.replace('/login');
-    } else if (user && inAuthGroup) {
-      router.replace('/(app)');
-    }
-  }, [user, loading, segments]);
+  const signIn = async (userData: User) => {
+    setUser(userData);
+    await AsyncStorage.setItem('@MindHarbor:user', JSON.stringify(userData));
+  };
 
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
+      await AsyncStorage.removeItem('@MindHarbor:user');
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

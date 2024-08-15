@@ -31,26 +31,45 @@ export default function DashboardScreen() {
           style={styles.profileImage}
         />
         <View>
-          <Text style={styles.title}>Bem-vindo, {user.firstName}!</Text>
-          <Text style={styles.subtitle}>Como está se sentindo hoje?</Text>
+          <Text style={styles.welcomeText}>Bem-vindo,</Text>
+          <Text style={styles.nameText}>{user.firstName}!</Text>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recursos</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Próxima Consulta</Text>
+        <Text style={styles.appointmentText}>Dra. Maria Silva</Text>
+        <Text style={styles.appointmentDate}>Hoje, 15:00</Text>
         <TouchableOpacity 
-          style={styles.resourceButton} 
-          onPress={() => navigateTo('/(app)/(patient)/resource-library')}
+          style={styles.joinButton}
+          onPress={() => navigateTo('/(app)/(patient)/mock-video-call')}
         >
-          <Feather name="book" size={24} color={cores.textoBranco} />
-          <Text style={styles.resourceText}>Biblioteca de Recursos</Text>
+          <Feather name="video" size={20} color={cores.textoBranco} />
+          <Text style={styles.joinButtonText}>Entrar na Chamada</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.quickActions}>
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={() => navigateTo('/(app)/(patient)/book-appointment')}
+        >
+          <Feather name="calendar" size={24} color={cores.primaria} />
+          <Text style={styles.actionText}>Agendar Consulta</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.resourceButton} 
+          style={styles.actionButton} 
+          onPress={() => navigateTo('/(app)/(patient)/resource-library')}
+        >
+          <Feather name="book" size={24} color={cores.primaria} />
+          <Text style={styles.actionText}>Biblioteca</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.actionButton} 
           onPress={() => navigateTo('/(app)/(patient)/community')}
         >
-          <Feather name="users" size={24} color={cores.textoBranco} />
-          <Text style={styles.resourceText}>Comunidade</Text>
+          <Feather name="users" size={24} color={cores.primaria} />
+          <Text style={styles.actionText}>Comunidade</Text>
         </TouchableOpacity>
       </View>
 
@@ -59,7 +78,7 @@ export default function DashboardScreen() {
       {__DEV__ && (
         <TouchableOpacity
           style={styles.hiddenButton}
-          onPress={() => navigateTo('/(app)/(patient)/hidden-therapist-creator')}
+          onPress={() => navigateTo('/(app)/(patient)/hidden-therapist-creation')}
         >
           <Text style={styles.hiddenButtonText}>Criar Terapeuta (Oculto)</Text>
         </TouchableOpacity>
@@ -85,37 +104,78 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 15,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: cores.textoBranco,
-  },
-  subtitle: {
+  welcomeText: {
     fontSize: 16,
     color: cores.textoBranco,
     opacity: 0.8,
   },
-  section: {
-    margin: 20,
+  nameText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: cores.textoBranco,
   },
-  sectionTitle: {
-    fontSize: 20,
+  card: {
+    backgroundColor: cores.textoBranco,
+    borderRadius: 10,
+    padding: 20,
+    margin: 20,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: cores.texto,
-    marginBottom: 15,
-  },
-  resourceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: cores.secundaria,
-    padding: 15,
-    borderRadius: 8,
     marginBottom: 10,
   },
-  resourceText: {
+  appointmentText: {
     fontSize: 16,
+    color: cores.texto,
+  },
+  appointmentDate: {
+    fontSize: 14,
+    color: cores.desativado,
+    marginBottom: 15,
+  },
+  joinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: cores.primaria,
+    padding: 10,
+    borderRadius: 5,
+    justifyContent: 'center',
+  },
+  joinButtonText: {
     color: cores.textoBranco,
-    marginLeft: 15,
+    marginLeft: 10,
+    fontWeight: 'bold',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  actionButton: {
+    alignItems: 'center',
+    backgroundColor: cores.textoBranco,
+    padding: 15,
+    borderRadius: 10,
+    width: '30%',
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  actionText: {
+    marginTop: 5,
+    color: cores.texto,
+    fontSize: 12,
+    textAlign: 'center',
   },
   signOutButton: {
     marginHorizontal: 20,

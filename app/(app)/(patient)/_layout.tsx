@@ -21,7 +21,7 @@ export default function PatientLayout() {
         options={{ title: 'Comunidade' }}
       />
       <Stack.Screen
-        name="hidden-therapist-creator"
+        name="hidden-therapist-creation"
         options={{ title: 'Criar Terapeuta', headerShown: false }}
       />
     </Stack>
