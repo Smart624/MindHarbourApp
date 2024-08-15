@@ -1,30 +1,27 @@
-
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import cores from '../constants/colors';
-import { Therapist } from '../types/user';
-import Button from './common/Button';
+import cores from '../../src/constants/colors';
+import { Therapist } from '../../src/types/user';
 
 interface TherapistCardProps {
   therapist: Therapist;
-  onBookAppointment: (therapistId: string) => void;
+  onBookAppointment: () => void;
 }
 
 const TherapistCard: React.FC<TherapistCardProps> = ({ therapist, onBookAppointment }) => {
-  const { id, firstName, lastName, specialization, bio, languages, licenseNumber } = therapist;
+  const { firstName, lastName, specialization, bio, languages } = therapist;
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <Image
-          source={{ uri: 'https://via.placeholder.com/100' }} // Placeholder image, replace with actual therapist photo
+          source={{ uri: 'https://via.placeholder.com/100' }}
           style={styles.photo}
         />
         <View style={styles.headerInfo}>
           <Text style={styles.name}>{`${firstName} ${lastName}`}</Text>
           <Text style={styles.specialization}>{specialization}</Text>
-          <Text style={styles.licenseNumber}>{licenseNumber}</Text>
         </View>
       </View>
       <Text style={styles.bio} numberOfLines={3}>{bio}</Text>
@@ -32,11 +29,10 @@ const TherapistCard: React.FC<TherapistCardProps> = ({ therapist, onBookAppointm
         <Feather name="globe" size={16} color={cores.texto} />
         <Text style={styles.languages}>{languages.join(', ')}</Text>
       </View>
-      <Button
-        title="Agendar Consulta"
-        onPress={() => onBookAppointment(id)}
-        size="small"
-      />
+      <TouchableOpacity style={styles.bookButton} onPress={onBookAppointment}>
+        <Feather name="calendar" size={20} color={cores.textoBranco} />
+        <Text style={styles.bookButtonText}>Agendar Consulta</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -44,9 +40,9 @@ const TherapistCard: React.FC<TherapistCardProps> = ({ therapist, onBookAppointm
 const styles = StyleSheet.create({
   card: {
     backgroundColor: cores.textoBranco,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
     shadowColor: cores.texto,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -55,13 +51,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   photo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginRight: 15,
   },
   headerInfo: {
     flex: 1,
@@ -75,27 +71,36 @@ const styles = StyleSheet.create({
   specialization: {
     fontSize: 14,
     color: cores.desativado,
-    marginTop: 4,
-  },
-  licenseNumber: {
-    fontSize: 12,
-    color: cores.desativado,
     marginTop: 2,
   },
   bio: {
     fontSize: 14,
     color: cores.texto,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   languagesContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   languages: {
     fontSize: 14,
     color: cores.texto,
-    marginLeft: 8,
+    marginLeft: 5,
+  },
+  bookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: cores.primaria,
+    borderRadius: 8,
+    padding: 10,
+  },
+  bookButtonText: {
+    color: cores.textoBranco,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 5,
   },
 });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import cores from '../../constants/colors';
 
 interface ButtonProps {
@@ -9,6 +9,8 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -18,12 +20,15 @@ const Button: React.FC<ButtonProps> = ({
   size = 'medium',
   disabled = false,
   loading = false,
+  style,
+  textStyle,
 }) => {
   const buttonStyles = [
     styles.button,
     styles[variant],
     styles[size],
     disabled && styles.disabled,
+    style,
   ];
 
   const textStyles = [
@@ -31,6 +36,7 @@ const Button: React.FC<ButtonProps> = ({
     styles[`${variant}Text`],
     styles[`${size}Text`],
     disabled && styles.disabledText,
+    textStyle,
   ];
 
   return (

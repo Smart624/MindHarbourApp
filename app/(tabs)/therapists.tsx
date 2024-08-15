@@ -1,66 +1,71 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import cores from '../../src/constants/colors';
 import TherapistCard from '../../src/components/TherapistCard';
 import { Therapist } from '../../src/types/user';
-
-const dummyTherapists: Therapist[] = [
-  {
-    id: '1',
-    firstName: 'João',
-    lastName: 'Silva',
-    email: 'joao.silva@example.com',
-    userType: 'therapist',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    specialization: 'Psicologia Clínica',
-    licenseNumber: 'CRP 01/12345',
-    bio: 'Especialista em terapia cognitivo-comportamental',
-    languages: ['Português', 'Inglês'],
-    availability: [
-      { day: 'monday', startTime: '09:00', endTime: '17:00' },
-      { day: 'wednesday', startTime: '09:00', endTime: '17:00' },
-      { day: 'friday', startTime: '09:00', endTime: '17:00' },
-    ],
-  },
-  {
-    id: '2',
-    firstName: 'Maria',
-    lastName: 'Santos',
-    email: 'maria.santos@example.com',
-    userType: 'therapist',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    specialization: 'Psicanálise',
-    licenseNumber: 'CRP 01/67890',
-    bio: 'Experiência em tratamento de ansiedade e depressão',
-    languages: ['Português', 'Espanhol'],
-    availability: [
-      { day: 'tuesday', startTime: '10:00', endTime: '18:00' },
-      { day: 'thursday', startTime: '10:00', endTime: '18:00' },
-      { day: 'saturday', startTime: '09:00', endTime: '13:00' },
-    ],
-  },
-];
+import { getTherapists } from '../../src/services/firestore';
 
 export default function TherapistsScreen() {
-  const handleBookAppointment = (therapistId: string) => {
-    console.log(`Agendar consulta com terapeuta ${therapistId}`);
-    // Implementar lógica de agendamento
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [filteredTherapists, setFilteredTherapists] = useState<Therapist[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchTherapists();
+  }, []);
+
+  const fetchTherapists = async () => {
+    try {
+      const fetchedTherapists = await getTherapists();
+      setTherapists(fetchedTherapists);
+      setFilteredTherapists(fetchedTherapists);
+    } catch (error) {
+      console.error('Error fetching therapists:', error);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    const filtered = therapists.filter(
+      (therapist) =>
+        therapist.firstName.toLowerCase().includes(query.toLowerCase()) ||
+        therapist.lastName.toLowerCase().includes(query.toLowerCase()) ||
+        therapist.specialization.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredTherapists(filtered);
+  };
+
+  const handleBookAppointment = (therapistId: string, therapistName: string) => {
+    router.push({
+      pathname: '/(app)/(patient)/book-appointment',
+      params: { therapistId, therapistName },
+    });
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Terapeutas</Text>
+      <View style={styles.searchContainer}>
+        <Feather name="search" size={20} color={cores.desativado} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar terapeuta..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+      </View>
       <FlatList
-        data={dummyTherapists}
+        data={filteredTherapists}
         renderItem={({ item }) => (
           <TherapistCard
             therapist={item}
-            onBookAppointment={handleBookAppointment}
+            onBookAppointment={() => handleBookAppointment(item.id, `${item.firstName} ${item.lastName}`)}
           />
         )}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -69,13 +74,25 @@ export default function TherapistsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: cores.fundo,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: cores.texto,
-    marginBottom: 20,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: cores.textoBranco,
+    margin: 15,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+  },
+  listContainer: {
+    padding: 15,
   },
 });
