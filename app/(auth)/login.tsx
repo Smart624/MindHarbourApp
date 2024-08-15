@@ -20,7 +20,7 @@ export default function LoginScreen() {
     try {
       const user = await entrar(email, password);
       setUser(user);
-      router.replace('/(app)');
+      router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Login error:', error);
       Alert.alert('Error', error.message || 'Failed to login');
@@ -48,6 +48,11 @@ export default function LoginScreen() {
         secureTextEntry
       />
       <Button title="Login" onPress={handleLogin} loading={loading} />
+      <Button 
+        title="Sign Up" 
+        onPress={() => router.push('/signup')} 
+        variant="outline"
+      />
     </View>
   );
 }

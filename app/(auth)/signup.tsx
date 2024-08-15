@@ -5,6 +5,7 @@ import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
 import { cadastrar } from '../../src/services/auth';
 import cores from '../../src/constants/colors';
+import { useGlobalAuthState } from '../../src/globalAuthState';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -14,19 +15,21 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
+  const { setUser } = useGlobalAuthState();
 
   const handleSignup = async () => {
     setLoading(true);
     try {
-      await cadastrar(email, password, {
+      const user = await cadastrar(email, password, {
         firstName,
         lastName,
         userType: 'patient', // Assuming default signup is for patients
       });
+      setUser(user);
       Alert.alert(
         "Signup Successful",
-        "Your account has been created. Please log in.",
-        [{ text: "OK", onPress: () => router.replace('/login') }]
+        "Your account has been created.",
+        [{ text: "OK", onPress: () => router.replace('/(tabs)') }]
       );
     } catch (error: any) {
       Alert.alert('Error', error.message);

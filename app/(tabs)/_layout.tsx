@@ -2,8 +2,15 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import cores from '../../src/constants/colors';
+import { useGlobalAuthState } from '../../src/globalAuthState';
 
 export default function TabLayout() {
+  const { user } = useGlobalAuthState();
+
+  if (!user) {
+    return null; // or handle this case appropriately
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -21,14 +28,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: 'Dashboard',
           tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="appointments"
         options={{
-          title: 'Agendar',
+          title: user.userType === 'patient' ? 'Book' : 'Appointments',
           tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} />,
         }}
       />
@@ -39,13 +46,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Feather name="message-circle" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="therapists"
-        options={{
-          title: 'Terapeutas',
-          tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color} />,
-        }}
-      />
+      {user.userType === 'patient' && (
+        <Tabs.Screen
+          name="therapists"
+          options={{
+            title: 'Therapists',
+            tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color} />,
+          }}
+        />
+      )}
     </Tabs>
   );
 }

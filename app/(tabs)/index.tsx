@@ -1,27 +1,34 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useAuth } from '../../src/context/AuthContext';
+import { useRouter } from 'expo-router';
+import { useGlobalAuthState } from '../../src/globalAuthState';
 import Button from '../../src/components/common/Button';
-import Loading from '../../src/components/common/Loading';
-import { Redirect } from 'expo-router';
 import cores from '../../src/constants/colors';
 
 export default function DashboardScreen() {
-  const { user, signOut, loading } = useAuth();
-
-  if (loading) {
-    return <Loading />;
-  }
+  const { user, setUser } = useGlobalAuthState();
+  const router = useRouter();
 
   if (!user) {
-    return <Redirect href="/login" />;
+    return null; // or handle this case appropriately
   }
+
+  const handleSignOut = () => {
+    // Implement sign out logic here
+    setUser(null);
+    router.replace('/login');
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo ao Dashboard</Text>
-      <Text style={styles.subtitle}>Olá, {user.firstName || 'Usuário'}!</Text>
-      <Button title="Sair" onPress={signOut} />
+      <Text style={styles.title}>Welcome to your Dashboard</Text>
+      <Text style={styles.subtitle}>Hello, {user.firstName || 'User'}!</Text>
+      {user.userType === 'patient' ? (
+        <Text style={styles.content}>Here you can view your upcoming appointments and book new ones.</Text>
+      ) : (
+        <Text style={styles.content}>Here you can manage your appointments and availability.</Text>
+      )}
+      <Button title="Sign Out" onPress={handleSignOut} />
     </View>
   );
 }
@@ -43,6 +50,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     color: cores.texto,
+    marginBottom: 30,
+  },
+  content: {
+    fontSize: 16,
+    color: cores.texto,
+    textAlign: 'center',
     marginBottom: 30,
   },
 });
