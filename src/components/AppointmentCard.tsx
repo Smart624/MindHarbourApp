@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -43,13 +44,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment, onCancel
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.therapistName}>{therapistName}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-          <Text style={styles.statusText}>{getStatusText(status)}</Text>
-        </View>
-      </View>
-      <Text style={styles.dateTime}>{formatarDataHora(startTimeDate)}</Text>
+      {/* ... */}
       {status === 'scheduled' && (
         <View style={styles.actions}>
           <TouchableOpacity style={styles.actionButton} onPress={() => onReschedule(id)}>

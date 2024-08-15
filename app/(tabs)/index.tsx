@@ -21,14 +21,14 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to your Dashboard</Text>
-      <Text style={styles.subtitle}>Hello, {user.firstName || 'User'}!</Text>
+      <Text style={styles.title}>Bem-vindo ao seu Painel</Text>
+      <Text style={styles.subtitle}>Olá, {user.firstName || 'Usuário'}!</Text>
       {user.userType === 'patient' ? (
-        <Text style={styles.content}>Here you can view your upcoming appointments and book new ones.</Text>
+        <Text style={styles.content}>Aqui você pode ver suas próximas consultas e agendar novas.</Text>
       ) : (
-        <Text style={styles.content}>Here you can manage your appointments and availability.</Text>
+        <Text style={styles.content}>Aqui você pode gerenciar suas consultas e disponibilidade.</Text>
       )}
-      <Button title="Sign Out" onPress={handleSignOut} />
+      <Button title="Sair" onPress={handleSignOut} />
     </View>
   );
 }

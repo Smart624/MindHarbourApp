@@ -1,3 +1,6 @@
+
+// src/components/common/Calendar.tsx
+
 import React from 'react';
 import { Calendar as RNCalendar, LocaleConfig } from 'react-native-calendars';
 import cores from '../../constants/colors';

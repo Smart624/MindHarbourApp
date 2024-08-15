@@ -1,3 +1,5 @@
+// src/services/auth.ts
+
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -37,7 +39,7 @@ export const entrar = async (email: string, senha: string): Promise<User> => {
     if (userDoc.exists()) {
       return userDoc.data() as User;
     } else {
-      throw new Error('User data not found');
+      throw new Error('Dados do usuário não encontrados');
     }
   } catch (error) {
     console.error('Erro ao entrar:', error);
@@ -51,5 +53,24 @@ export const sair = async (): Promise<void> => {
   } catch (error) {
     console.error('Erro ao sair:', error);
     throw new Error('Falha ao sair. Por favor, tente novamente.');
+  }
+};
+
+// Additional translations for error messages
+
+export const getAuthErrorMessage = (errorCode: string): string => {
+  switch (errorCode) {
+    case 'auth/email-already-in-use':
+      return 'Este email já está em uso. Por favor, use outro email ou faça login.';
+    case 'auth/invalid-email':
+      return 'O email fornecido é inválido. Por favor, verifique e tente novamente.';
+    case 'auth/weak-password':
+      return 'A senha é muito fraca. Por favor, use uma senha mais forte.';
+    case 'auth/user-not-found':
+      return 'Usuário não encontrado. Verifique seu email ou crie uma nova conta.';
+    case 'auth/wrong-password':
+      return 'Senha incorreta. Por favor, tente novamente.';
+    default:
+      return 'Ocorreu um erro. Por favor, tente novamente mais tarde.';
   }
 };

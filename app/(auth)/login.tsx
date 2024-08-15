@@ -1,29 +1,37 @@
+// app/(auth)/login.tsx
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
-import { entrar } from '../../src/services/auth';
+import { entrar, getAuthErrorMessage } from '../../src/services/auth';
 import cores from '../../src/constants/colors';
 import { useGlobalAuthState } from '../../src/globalAuthState';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
   const { setUser } = useGlobalAuthState();
 
   const handleLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const user = await entrar(email, password);
+      const user = await entrar(email, senha);
       setUser(user);
       router.replace('/(tabs)');
     } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert('Error', error.message || 'Failed to login');
+      console.error('Erro de login:', error);
+      const errorMessage = error.code ? getAuthErrorMessage(error.code) : error.message;
+      Alert.alert('Erro', errorMessage || 'Falha ao fazer login');
     } finally {
       setLoading(false);
     }
@@ -31,25 +39,25 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to MindHarbor</Text>
+      <Text style={styles.title}>Bem-vindo ao MindHarbor</Text>
       <Input
         label="Email"
         value={email}
         onChangeText={setEmail}
-        placeholder="Your email"
+        placeholder="Seu email"
         keyboardType="email-address"
         autoCapitalize="none"
       />
       <Input
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Your password"
+        label="Senha"
+        value={senha}
+        onChangeText={setSenha}
+        placeholder="Sua senha"
         secureTextEntry
       />
-      <Button title="Login" onPress={handleLogin} loading={loading} />
+      <Button title="Entrar" onPress={handleLogin} loading={loading} />
       <Button 
-        title="Sign Up" 
+        title="Criar Conta" 
         onPress={() => router.push('/signup')} 
         variant="outline"
       />

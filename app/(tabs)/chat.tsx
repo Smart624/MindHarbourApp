@@ -6,7 +6,8 @@ export default function ChatScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Chat</Text>
-      <Text style={styles.content}>Aqui você poderá conversar com seu terapeuta.</Text>
+      <Text style={styles.content}>Aqui você pode conversar com seu terapeuta.</Text>
+      {/* Add chat interface here */}
     </View>
   );
 }

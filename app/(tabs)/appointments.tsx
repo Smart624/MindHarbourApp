@@ -5,8 +5,9 @@ import cores from '../../src/constants/colors';
 export default function AppointmentsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Agendamentos</Text>
-      <Text style={styles.content}>Aqui você poderá ver e gerenciar seus agendamentos.</Text>
+      <Text style={styles.title}>Consultas</Text>
+      <Text style={styles.content}>Aqui você pode ver e gerenciar suas consultas.</Text>
+      {/* Add appointment list or calendar here */}
     </View>
   );
 }

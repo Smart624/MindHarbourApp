@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -28,14 +29,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Painel',
           tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="appointments"
         options={{
-          title: user.userType === 'patient' ? 'Book' : 'Appointments',
+          title: user.userType === 'patient' ? 'Agendar' : 'Consultas',
           tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} />,
         }}
       />
@@ -50,7 +51,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="therapists"
           options={{
-            title: 'Therapists',
+            title: 'Terapeutas',
             tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color} />,
           }}
         />
