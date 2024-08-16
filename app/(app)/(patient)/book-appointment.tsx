@@ -27,6 +27,11 @@ export default function BookAppointmentScreen() {
   const handleConfirmAppointment = async () => {
     if (selectedDate && selectedTime && user) {
       try {
+        console.log('User object:', user);
+        if (!user.uid && !user.id) {
+          throw new Error('User ID is undefined');
+        }
+
         const startTime = new Date(selectedDate);
         const [hours, minutes] = selectedTime.split(':');
         startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
@@ -35,7 +40,7 @@ export default function BookAppointmentScreen() {
         endTime.setHours(endTime.getHours() + 1);  // Assuming 1-hour appointments
         
         await createAppointment({
-          patientId: user.id,
+          patientId: user.uid || user.id,
           therapistId,
           therapistName,
           startTime,
@@ -52,9 +57,12 @@ export default function BookAppointmentScreen() {
         console.error('Error booking appointment:', error);
         Alert.alert("Erro", "Não foi possível agendar a consulta. Por favor, tente novamente.");
       }
+    } else {
+      console.error('Missing required data:', { selectedDate, selectedTime, user });
+      Alert.alert("Erro", "Por favor, selecione uma data e horário e certifique-se de que está logado.");
     }
   };
-
+  
   // Mock available times - in a real app, these would come from an API
   const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
@@ -93,7 +101,6 @@ export default function BookAppointmentScreen() {
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {

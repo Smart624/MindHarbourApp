@@ -1,5 +1,3 @@
-// src/services/firestore.ts
-
 import { 
   doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs,
   Timestamp, serverTimestamp, addDoc, orderBy
@@ -12,7 +10,6 @@ import { firestore } from './firebaseConfig';
 
 type FirestoreData = { [key: string]: any };
 
-// Converte datas para Timestamp do Firestore
 const convertToFirestoreData = <T extends FirestoreData>(data: T): T => {
   const converted: FirestoreData = { ...data };
   for (const key in converted) {
@@ -23,7 +20,6 @@ const convertToFirestoreData = <T extends FirestoreData>(data: T): T => {
   return converted as T;
 };
 
-// Trata erros do Firestore
 const handleFirestoreError = (error: unknown, operation: string): never => {
   console.error(`Erro do Firestore ${operation}:`, error);
   throw new Error(translate('Falha ao ' + operation as any));
@@ -117,9 +113,12 @@ const toTimestamp = (date: Date | Timestamp): Timestamp => {
   return Timestamp.fromDate(date);
 };
 
-// Cria uma nova consulta
 export const createAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<void> => {
   try {
+    console.log('Creating appointment with data:', appointment);  // Keep this line for debugging
+    if (!appointment.patientId) {
+      throw new Error('patientId is undefined');
+    }
     const appointmentRef = doc(collection(firestore, 'appointments'));
     const newAppointment: Appointment = {
       id: appointmentRef.id,
@@ -129,6 +128,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id'>): P
     };
     await setDoc(appointmentRef, newAppointment);
   } catch (error) {
+    console.error('Error in createAppointment:', error);  // Keep this line for detailed error logging
     handleFirestoreError(error, 'criar consulta');
   }
 };

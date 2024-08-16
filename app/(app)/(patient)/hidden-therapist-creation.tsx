@@ -13,11 +13,15 @@ const generateRandomTherapist = (): Therapist => {
   const randomItem = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
   const randomNumber = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
 
+  const firstName = randomItem(firstNames);
+  const lastName = randomItem(lastNames);
+
   return {
+    uid: `therapist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     id: `therapist_${Date.now()}`,
-    firstName: randomItem(firstNames),
-    lastName: randomItem(lastNames),
-    email: `${randomItem(firstNames).toLowerCase()}.${randomItem(lastNames).toLowerCase()}@example.com`,
+    firstName,
+    lastName,
+    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
     userType: 'therapist' as UserType,
     specialization: randomItem(specializations),
     licenseNumber: `CRP ${randomNumber(1, 20)}/${randomNumber(10000, 99999)}`,
