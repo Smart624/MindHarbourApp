@@ -11,6 +11,8 @@ export default function TherapistsScreen() {
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [filteredTherapists, setFilteredTherapists] = useState<Therapist[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSpecialization, setSelectedSpecialization] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -29,12 +31,39 @@ export default function TherapistsScreen() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const filtered = therapists.filter(
-      (therapist) =>
-        therapist.firstName.toLowerCase().includes(query.toLowerCase()) ||
-        therapist.lastName.toLowerCase().includes(query.toLowerCase()) ||
-        therapist.specialization.toLowerCase().includes(query.toLowerCase())
-    );
+    applyFilters(query, selectedSpecialization, selectedLanguage);
+  };
+
+  const handleSpecializationFilter = (specialization: string) => {
+    setSelectedSpecialization(specialization);
+    applyFilters(searchQuery, specialization, selectedLanguage);
+  };
+
+  const handleLanguageFilter = (language: string) => {
+    setSelectedLanguage(language);
+    applyFilters(searchQuery, selectedSpecialization, language);
+  };
+
+  const applyFilters = (query: string, specialization: string, language: string) => {
+    let filtered = therapists;
+
+    if (query) {
+      filtered = filtered.filter(
+        (therapist) =>
+          therapist.firstName.toLowerCase().includes(query.toLowerCase()) ||
+          therapist.lastName.toLowerCase().includes(query.toLowerCase()) ||
+          therapist.specialization.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    if (specialization) {
+      filtered = filtered.filter((therapist) => therapist.specialization === specialization);
+    }
+
+    if (language) {
+      filtered = filtered.filter((therapist) => therapist.languages.includes(language));
+    }
+
     setFilteredTherapists(filtered);
   };
 
@@ -44,6 +73,10 @@ export default function TherapistsScreen() {
       params: { therapistId, therapistName },
     });
   };
+
+  // Get unique specializations and languages for filter options
+  const specializations = Array.from(new Set(therapists.map((t) => t.specialization)));
+  const languages = Array.from(new Set(therapists.flatMap((t) => t.languages)));
 
   return (
     <View style={styles.container}>
@@ -56,6 +89,52 @@ export default function TherapistsScreen() {
           onChangeText={handleSearch}
         />
       </View>
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterButton, selectedSpecialization ? styles.filterButtonActive : null]}
+          onPress={() => setSelectedSpecialization('')}
+        >
+          <Text style={styles.filterButtonText}>Especialização</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterButton, selectedLanguage ? styles.filterButtonActive : null]}
+          onPress={() => setSelectedLanguage('')}
+        >
+          <Text style={styles.filterButtonText}>Idioma</Text>
+        </TouchableOpacity>
+      </View>
+      {selectedSpecialization === '' && (
+        <FlatList
+          data={specializations}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.filterOption}
+              onPress={() => handleSpecializationFilter(item)}
+            >
+              <Text>{item}</Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item}
+        />
+      )}
+      {selectedLanguage === '' && (
+        <FlatList
+          data={languages}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.filterOption}
+              onPress={() => handleLanguageFilter(item)}
+            >
+              <Text>{item}</Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item}
+        />
+      )}
       <FlatList
         data={filteredTherapists}
         renderItem={({ item }) => (
@@ -91,6 +170,28 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     fontSize: 16,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  filterButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: cores.desativado,
+  },
+  filterButtonActive: {
+    backgroundColor: cores.primaria,
+  },
+  filterButtonText: {
+    color: cores.textoBranco,
+  },
+  filterOption: {
+    padding: 10,
+    marginHorizontal: 5,
+    backgroundColor: cores.textoBranco,
+    borderRadius: 5,
   },
   listContainer: {
     padding: 15,

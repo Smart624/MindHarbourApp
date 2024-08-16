@@ -52,10 +52,10 @@ export default function DashboardScreen() {
       <View style={styles.quickActions}>
         <TouchableOpacity 
           style={styles.actionButton} 
-          onPress={() => navigateTo('/(app)/(patient)/book-appointment')}
+          onPress={() => navigateTo('/(app)/(patient)/emergency-resources')}
         >
-          <Feather name="calendar" size={24} color={cores.primaria} />
-          <Text style={styles.actionText}>Agendar Consulta</Text>
+          <Feather name="alert-circle" size={24} color={cores.primaria} />
+          <Text style={styles.actionText}>Recursos de Emergência</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionButton} 
@@ -155,16 +155,17 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: 20,
-    marginBottom: 20,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    padding: 20,
   },
   actionButton: {
-    alignItems: 'center',
+    width: '48%',
     backgroundColor: cores.textoBranco,
     padding: 15,
     borderRadius: 10,
-    width: '30%',
+    alignItems: 'center',
+    marginBottom: 15,
     shadowColor: cores.texto,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

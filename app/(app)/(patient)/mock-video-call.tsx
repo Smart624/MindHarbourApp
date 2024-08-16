@@ -1,11 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import cores from '../../../src/constants/colors';
 
 export default function MockVideoCallScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+      </TouchableOpacity>
       <View style={styles.remoteVideo}>
         <Text style={styles.remoteText}>Vídeo do Terapeuta</Text>
       </View>
@@ -74,5 +80,11 @@ const styles = StyleSheet.create({
   },
   endCallButton: {
     backgroundColor: cores.erro,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
 });

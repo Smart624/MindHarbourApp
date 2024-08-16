@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { addDoc, collection } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { firestore } from '../../../src/services/firebaseConfig';
+import { createTherapist } from '../../../src/services/firestore';
 import cores from '../../../src/constants/colors';
+import { Therapist, UserType } from '../../../src/types/user';
 
-const generateRandomTherapist = () => {
+const generateRandomTherapist = (): Therapist => {
   const firstNames = ['Ana', 'Carlos', 'Mariana', 'João', 'Beatriz', 'Rafael', 'Camila', 'Lucas'];
   const lastNames = ['Silva', 'Santos', 'Oliveira', 'Ferreira', 'Rodrigues', 'Almeida', 'Costa', 'Carvalho'];
   const specializations = ['Psicologia Clínica', 'Terapia Cognitivo-Comportamental', 'Psicanálise', 'Psicologia Infantil', 'Neuropsicologia'];
@@ -14,10 +17,11 @@ const generateRandomTherapist = () => {
   const randomNumber = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
 
   return {
+    id: `therapist_${Date.now()}`,
     firstName: randomItem(firstNames),
     lastName: randomItem(lastNames),
     email: `${randomItem(firstNames).toLowerCase()}.${randomItem(lastNames).toLowerCase()}@example.com`,
-    userType: 'therapist',
+    userType: 'therapist' as UserType,
     specialization: randomItem(specializations),
     licenseNumber: `CRP ${randomNumber(1, 20)}/${randomNumber(10000, 99999)}`,
     bio: 'Terapeuta experiente com foco em ajudar pacientes a superar desafios e alcançar bem-estar emocional.',
@@ -34,12 +38,13 @@ const generateRandomTherapist = () => {
 
 export default function HiddenTherapistCreatorScreen() {
   const [creatingTherapist, setCreatingTherapist] = useState(false);
+  const router = useRouter();
 
   const handleCreateTherapist = async () => {
     setCreatingTherapist(true);
     try {
       const newTherapist = generateRandomTherapist();
-      await addDoc(collection(firestore, 'therapists'), newTherapist);
+      await createTherapist(newTherapist);
       Alert.alert('Sucesso', 'Terapeuta criado com sucesso!');
     } catch (error) {
       console.error('Erro ao criar terapeuta:', error);
@@ -51,6 +56,9 @@ export default function HiddenTherapistCreatorScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Feather name="arrow-left" size={24} color={cores.texto} />
+      </TouchableOpacity>
       <Text style={styles.title}>Criador de Terapeuta (Oculto)</Text>
       <TouchableOpacity
         style={styles.button}
@@ -64,6 +72,7 @@ export default function HiddenTherapistCreatorScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -88,5 +97,10 @@ const styles = StyleSheet.create({
     color: cores.textoBranco,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
   },
 });
