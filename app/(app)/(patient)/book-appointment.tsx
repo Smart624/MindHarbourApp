@@ -1,31 +1,57 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Calendar from '../../../src/components/common/Calendar';
 import Button from '../../../src/components/common/Button';
 import cores from '../../../src/constants/colors';
-import { formatarData } from '../../../src/utils/dateHelpers';
+import { formatarData, formatarDataHora } from '../../../src/utils/dateHelpers';
+import { createAppointment } from '../../../src/services/firestore';
+import { useGlobalAuthState } from '../../../src/globalAuthState';
 
 export default function BookAppointmentScreen() {
   const { therapistId, therapistName } = useLocalSearchParams<{ therapistId: string, therapistName: string }>();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useGlobalAuthState();
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    setSelectedTime(null); // Reset time when a new date is selected
+    setSelectedTime(null);
   };
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
   };
 
-  const handleConfirmAppointment = () => {
-    if (selectedDate && selectedTime) {
-      // Here you would typically call an API to book the appointment
-      console.log(`Appointment booked with ${therapistName} on ${formatarData(selectedDate)} at ${selectedTime}`);
-      router.push('/(tabs)');
+  const handleConfirmAppointment = async () => {
+    if (selectedDate && selectedTime && user) {
+      try {
+        const startTime = new Date(selectedDate);
+        const [hours, minutes] = selectedTime.split(':');
+        startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        
+        const endTime = new Date(startTime);
+        endTime.setHours(endTime.getHours() + 1);  // Assuming 1-hour appointments
+        
+        await createAppointment({
+          patientId: user.id,
+          therapistId,
+          therapistName,
+          startTime,
+          endTime,
+          status: 'scheduled'
+        });
+        
+        Alert.alert(
+          "Agendamento Confirmado",
+          `Sua consulta com ${therapistName} foi agendada para ${formatarDataHora(startTime)}.`,
+          [{ text: "OK", onPress: () => router.push('/(tabs)') }]
+        );
+      } catch (error) {
+        console.error('Error booking appointment:', error);
+        Alert.alert("Erro", "Não foi possível agendar a consulta. Por favor, tente novamente.");
+      }
     }
   };
 
@@ -67,6 +93,7 @@ export default function BookAppointmentScreen() {
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

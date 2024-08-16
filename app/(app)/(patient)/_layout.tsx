@@ -7,23 +7,49 @@ import cores from '../../../src/constants/colors';
 export default function PatientLayout() {
   const router = useRouter();
 
+  const navigateToDashboard = () => {
+    router.push('/(tabs)');
+  };
+
   return (
     <Stack
       screenOptions={{
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="arrow-left" size={24} color={cores.texto} />
-          </TouchableOpacity>
-        ),
+        headerStyle: {
+          backgroundColor: cores.primaria,
+        },
+        headerTintColor: cores.textoBranco,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerLeft: ({ canGoBack }) => 
+          canGoBack ? (
+            <TouchableOpacity onPress={() => router.back()}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ) : null,
       }}
     >
       <Stack.Screen
         name="book-appointment"
-        options={{ title: 'Agendar Consulta' }}
+        options={{ 
+          title: 'Agendar Consulta',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.push('/(tabs)/therapists')}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
       />
       <Stack.Screen
         name="resource-library"
-        options={{ title: 'Biblioteca de Recursos' }}
+        options={{ 
+          title: 'Biblioteca de Recursos',
+          headerLeft: () => (
+            <TouchableOpacity onPress={navigateToDashboard}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
       />
       <Stack.Screen
         name="mock-video-call"
@@ -31,15 +57,47 @@ export default function PatientLayout() {
       />
       <Stack.Screen
         name="community"
-        options={{ title: 'Comunidade' }}
+        options={{ 
+          title: 'Comunidade',
+          headerLeft: () => (
+            <TouchableOpacity onPress={navigateToDashboard}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
       />
       <Stack.Screen
         name="hidden-therapist-creation"
-        options={{ title: 'Criar Terapeuta', headerShown: false }}
+        options={{ 
+          title: 'Criar Terapeuta',
+          headerLeft: () => (
+            <TouchableOpacity onPress={navigateToDashboard}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
       />
       <Stack.Screen
         name="emergency-resources"
-        options={{ title: 'Recursos de Emergência' }}
+        options={{ 
+          title: 'Recursos de Emergência',
+          headerLeft: () => (
+            <TouchableOpacity onPress={navigateToDashboard}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+     <Stack.Screen
+        name="chat/[id]"
+        options={{ 
+          title: 'Chat',
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.push('/(tabs)/chat')}>
+              <Feather name="arrow-left" size={24} color={cores.textoBranco} />
+            </TouchableOpacity>
+          ),
+        }}
       />
     </Stack>
   );

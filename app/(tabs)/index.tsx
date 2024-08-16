@@ -5,14 +5,40 @@ import { useGlobalAuthState } from '../../src/globalAuthState';
 import Button from '../../src/components/common/Button';
 import cores from '../../src/constants/colors';
 import { Feather } from '@expo/vector-icons';
+import { useAppointments } from '../../src/hooks/useAppointments';
+import { formatarDataHora } from '../../src/utils/dateHelpers';
+import { Timestamp } from 'firebase/firestore';
+import { Appointment } from '../../src/types/appointment';
+
+const getNextAppointment = (appointments: Appointment[]): Appointment | undefined => {
+  const now = new Date();
+  return appointments
+    .filter(app => {
+      const startTime = app.startTime instanceof Timestamp ? app.startTime.toDate() : app.startTime;
+      return startTime > now;
+    })
+    .sort((a, b) => {
+      const aStartTime = a.startTime instanceof Timestamp ? a.startTime.toDate() : a.startTime;
+      const bStartTime = b.startTime instanceof Timestamp ? b.startTime.toDate() : b.startTime;
+      return aStartTime.getTime() - bStartTime.getTime();
+    })[0];
+};
+
+// Add this helper function
+const ensureDate = (date: Date | Timestamp): Date => {
+  return date instanceof Timestamp ? date.toDate() : date;
+};
 
 export default function DashboardScreen() {
   const { user, setUser } = useGlobalAuthState();
   const router = useRouter();
+  const { appointments, loading } = useAppointments();
 
   if (!user) {
     return null;
   }
+
+  const nextAppointment = getNextAppointment(appointments);
 
   const handleSignOut = () => {
     setUser(null);
@@ -38,15 +64,25 @@ export default function DashboardScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Próxima Consulta</Text>
-        <Text style={styles.appointmentText}>Dra. Maria Silva</Text>
-        <Text style={styles.appointmentDate}>Hoje, 15:00</Text>
-        <TouchableOpacity 
-          style={styles.joinButton}
-          onPress={() => navigateTo('/(app)/(patient)/mock-video-call')}
-        >
-          <Feather name="video" size={20} color={cores.textoBranco} />
-          <Text style={styles.joinButtonText}>Entrar na Chamada</Text>
-        </TouchableOpacity>
+        {loading ? (
+          <Text>Carregando...</Text>
+        ) : nextAppointment ? (
+          <>
+            <Text style={styles.appointmentText}>{nextAppointment.therapistName}</Text>
+            <Text style={styles.appointmentDate}>
+              {formatarDataHora(ensureDate(nextAppointment.startTime))}
+            </Text>
+            <TouchableOpacity 
+              style={styles.joinButton}
+              onPress={() => navigateTo('/(app)/(patient)/mock-video-call')}
+            >
+              <Feather name="video" size={20} color={cores.textoBranco} />
+              <Text style={styles.joinButtonText}>Entrar na Chamada</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text>Nenhuma consulta agendada</Text>
+        )}
       </View>
 
       <View style={styles.quickActions}>
@@ -86,6 +122,7 @@ export default function DashboardScreen() {
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

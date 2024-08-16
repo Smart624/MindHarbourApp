@@ -7,6 +7,8 @@ export interface Chat {
   id: string;
   patientId: string;
   therapistId: string;
+  therapistName: string; 
+  lastMessage: string;    
   createdAt: Date | Timestamp;
   lastMessageAt: Date | Timestamp;
 }

@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { firestore } from '../../../src/services/firebaseConfig';
 import { createTherapist } from '../../../src/services/firestore';
 import cores from '../../../src/constants/colors';
 import { Therapist, UserType } from '../../../src/types/user';
@@ -38,7 +35,6 @@ const generateRandomTherapist = (): Therapist => {
 
 export default function HiddenTherapistCreatorScreen() {
   const [creatingTherapist, setCreatingTherapist] = useState(false);
-  const router = useRouter();
 
   const handleCreateTherapist = async () => {
     setCreatingTherapist(true);
@@ -56,9 +52,6 @@ export default function HiddenTherapistCreatorScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Feather name="arrow-left" size={24} color={cores.texto} />
-      </TouchableOpacity>
       <Text style={styles.title}>Criador de Terapeuta (Oculto)</Text>
       <TouchableOpacity
         style={styles.button}
@@ -72,7 +65,6 @@ export default function HiddenTherapistCreatorScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -97,10 +89,5 @@ const styles = StyleSheet.create({
     color: cores.textoBranco,
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
   },
 });

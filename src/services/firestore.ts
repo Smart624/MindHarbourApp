@@ -2,7 +2,7 @@
 
 import { 
   doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs,
-  Timestamp, serverTimestamp
+  Timestamp, serverTimestamp, addDoc, orderBy
 } from 'firebase/firestore';
 import { User, Patient, Therapist, UserType } from '../types/user';
 import { Appointment } from '../types/appointment';
@@ -109,11 +109,25 @@ export const getTherapists = async (): Promise<Therapist[]> => {
   }
 };
 
+// Helper function to convert Date or Timestamp to Timestamp
+const toTimestamp = (date: Date | Timestamp): Timestamp => {
+  if (date instanceof Timestamp) {
+    return date;
+  }
+  return Timestamp.fromDate(date);
+};
+
 // Cria uma nova consulta
-export const createAppointment = async (appointment: Appointment): Promise<void> => {
+export const createAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<void> => {
   try {
-    const appointmentRef = doc(firestore, `appointments/${appointment.id}`);
-    await setDoc(appointmentRef, convertToFirestoreData(appointment));
+    const appointmentRef = doc(collection(firestore, 'appointments'));
+    const newAppointment: Appointment = {
+      id: appointmentRef.id,
+      ...appointment,
+      startTime: toTimestamp(appointment.startTime),
+      endTime: toTimestamp(appointment.endTime)
+    };
+    await setDoc(appointmentRef, newAppointment);
   } catch (error) {
     handleFirestoreError(error, 'criar consulta');
   }
@@ -171,10 +185,12 @@ export const getChats = async (userId: string): Promise<Chat[]> => {
 };
 
 // Cria uma nova mensagem
-export const createMessage = async (message: Message): Promise<void> => {
+export const sendMessage = async (message: Omit<Message, 'id'>): Promise<void> => {
   try {
-    const messageRef = doc(firestore, `messages/${message.id}`);
-    await setDoc(messageRef, convertToFirestoreData(message));
+    await addDoc(collection(firestore, 'messages'), {
+      ...message,
+      sentAt: toTimestamp(message.sentAt)
+    });
   } catch (error) {
     handleFirestoreError(error, 'criar mensagem');
   }
@@ -183,7 +199,11 @@ export const createMessage = async (message: Message): Promise<void> => {
 // Obtém as mensagens de um chat
 export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {
-    const messagesQuery = query(collection(firestore, 'messages'), where('chatId', '==', chatId));
+    const messagesQuery = query(
+      collection(firestore, 'messages'),
+      where('chatId', '==', chatId),
+      orderBy('sentAt', 'desc')
+    );
     const messageDocs = await getDocs(messagesQuery);
     return messageDocs.docs.map(doc => {
       const messageData = doc.data() as Message;
