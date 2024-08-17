@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
 import cores from '../../src/constants/colors';
 import { useGlobalAuthState } from '../../src/globalAuthState';
-import { getChats, deleteChat, createChat } from '../../src/services/firestore';
+import { getChats } from '../../src/services/firestore';
 import { Chat } from '../../src/types/chat';
 import { formatarData } from '../../src/utils/dateHelpers';
 import Loading from '../../src/components/common/Loading';
-import { Feather } from '@expo/vector-icons';
 
 export default function ChatListScreen() {
   const [chats, setChats] = useState<Chat[]>([]);
@@ -17,12 +16,14 @@ export default function ChatListScreen() {
   const { user } = useGlobalAuthState();
   const router = useRouter();
 
+  useEffect(() => {
+    fetchChats();
+  }, [user]);
+
   const fetchChats = async () => {
     if (user) {
       try {
-        console.log('Fetching chats for user:', user.uid);
         const fetchedChats = await getChats(user.uid);
-        console.log('Fetched chats:', fetchedChats);
         setChats(fetchedChats);
       } catch (error) {
         console.error('Error fetching chats:', error);
@@ -31,54 +32,8 @@ export default function ChatListScreen() {
         setLoading(false);
       }
     } else {
-      console.log('No user found, setting loading to false');
       setLoading(false);
       setError('No user found');
-    }
-  };
-
-  useEffect(() => {
-    fetchChats();
-  }, [user]);
-
-  const handleDeleteChat = async (chatId: string) => {
-    Alert.alert(
-      "Deletar Conversa",
-      "Tem certeza que deseja deletar esta conversa?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Deletar", 
-          onPress: async () => {
-            try {
-              await deleteChat(chatId);
-              fetchChats(); // Refresh the chat list
-            } catch (error) {
-              console.error('Error deleting chat:', error);
-              Alert.alert("Erro", "Não foi possível deletar a conversa.");
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleStartNewChat = async (therapistId: string, therapistName: string) => {
-    if (user) {
-      try {
-        const newChat = await createChat({
-          patientId: user.uid,
-          therapistId,
-          therapistName,
-          lastMessage: "Conversa iniciada",
-          createdAt: new Date(),
-          lastMessageAt: new Date(),
-        });
-        router.push(`/(app)/(patient)/chat/${newChat.id}`);
-      } catch (error) {
-        console.error('Error creating new chat:', error);
-        Alert.alert("Erro", "Não foi possível iniciar uma nova conversa.");
-      }
     }
   };
 
@@ -94,9 +49,6 @@ export default function ChatListScreen() {
           {formatarData(item.lastMessageAt instanceof Timestamp ? item.lastMessageAt.toDate() : item.lastMessageAt)}
         </Text>
       </View>
-      <TouchableOpacity onPress={() => handleDeleteChat(item.id)} style={styles.deleteButton}>
-        <Feather name="trash-2" size={24} color={cores.erro} />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
   
@@ -145,6 +97,9 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
   },
+  chatInfo: {
+    flex: 1,
+  },
   therapistName: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -170,11 +125,5 @@ const styles = StyleSheet.create({
     color: cores.erro,
     textAlign: 'center',
     marginTop: 20,
-  },
-  chatInfo: {
-    flex: 1,
-  },
-  deleteButton: {
-    padding: 10,
   },
 });
