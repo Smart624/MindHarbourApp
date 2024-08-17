@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useGlobalAuthState } from '../src/globalAuthState';
 import cores from '../src/constants/colors';
 
+
 export default function RootLayout() {
   const { user } = useGlobalAuthState();
   const segments = useSegments();

@@ -9,8 +9,8 @@ export interface User {
   firstName: string;
   lastName: string;
   userType: UserType;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | { seconds: number; nanoseconds: number };
+  updatedAt: Date | { seconds: number; nanoseconds: number };
 }
 
 export interface Patient extends User {

@@ -1,52 +1,54 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Timestamp } from 'firebase/firestore';
 import cores from '../../../../src/constants/colors';
-import { useAuth } from '../../../../src/context/AuthContext';
-import { getMessages, sendMessage } from '../../../../src/services/firestore';
+import { useGlobalAuthState } from '../../../../src/globalAuthState';
+import { getMessages, sendMessage, subscribeToMessages } from '../../../../src/services/firestore';
 import { Message } from '../../../../src/types/chat';
 import { formatarDataHora } from '../../../../src/utils/dateHelpers';
 
-const ensureDate = (date: Date | Timestamp): Date => {
-  return date instanceof Timestamp ? date.toDate() : date;
-};
-
-export default function ChatScreen() {
-  const { chatId } = useLocalSearchParams<{ chatId: string }>();
+export default function ChatConversationScreen() {
+  const { id: chatId } = useLocalSearchParams<{ id: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const { user } = useAuth();
-  const router = useRouter();
-
-  const fetchMessages = useCallback(async () => {
-    if (chatId) {
-      try {
-        const fetchedMessages = await getMessages(chatId);
-        setMessages(fetchedMessages);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    }
-  }, [chatId]);
+  const { user } = useGlobalAuthState();
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    let unsubscribe: () => void;
+
+    const fetchMessages = async () => {
+      if (chatId) {
+        const fetchedMessages = await getMessages(chatId);
+        setMessages(fetchedMessages);
+
+        unsubscribe = subscribeToMessages(chatId, (newMessages) => {
+          setMessages(newMessages);
+        });
+      }
+    };
+
     fetchMessages();
-    // Here you would typically set up a real-time listener for new messages
-  }, [fetchMessages]);
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [chatId]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() && user && chatId) {
       try {
         await sendMessage({
           chatId,
-          senderId: user.id,
+          senderId: user.uid,
           content: newMessage.trim(),
           sentAt: new Date()
         });
         setNewMessage('');
-        fetchMessages();  // Refetch messages after sending
       } catch (error) {
         console.error('Error sending message:', error);
       }
@@ -56,10 +58,12 @@ export default function ChatScreen() {
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[
       styles.messageBubble,
-      item.senderId === user?.id ? styles.sentMessage : styles.receivedMessage
+      item.senderId === user?.uid ? styles.sentMessage : styles.receivedMessage
     ]}>
       <Text style={styles.messageText}>{item.content}</Text>
-      <Text style={styles.messageTime}>{formatarDataHora(ensureDate(item.sentAt))}</Text>
+      <Text style={styles.messageTime}>
+        {formatarDataHora(item.sentAt instanceof Timestamp ? item.sentAt.toDate() : item.sentAt)}
+      </Text>
     </View>
   );
 
@@ -70,11 +74,13 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
       <FlatList
+        ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         inverted
         contentContainerStyle={styles.messageList}
+        onContentSizeChange={() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true })}
       />
       <View style={styles.inputContainer}>
         <TextInput

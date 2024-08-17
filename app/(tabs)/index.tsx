@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGlobalAuthState } from '../../src/globalAuthState';
@@ -9,8 +9,10 @@ import { useAppointments } from '../../src/hooks/useAppointments';
 import { formatarDataHora } from '../../src/utils/dateHelpers';
 import { Timestamp } from 'firebase/firestore';
 import { Appointment } from '../../src/types/appointment';
+import Loading from '../../src/components/common/Loading';
 
 const getNextAppointment = (appointments: Appointment[]): Appointment | undefined => {
+  console.log('Getting next appointment from:', appointments);
   const now = new Date();
   return appointments
     .filter(app => {
@@ -24,21 +26,27 @@ const getNextAppointment = (appointments: Appointment[]): Appointment | undefine
     })[0];
 };
 
-// Add this helper function
-const ensureDate = (date: Date | Timestamp): Date => {
-  return date instanceof Timestamp ? date.toDate() : date;
-};
-
 export default function DashboardScreen() {
   const { user, setUser } = useGlobalAuthState();
   const router = useRouter();
-  const { appointments, loading } = useAppointments();
+  const { appointments, loading, error } = useAppointments();
+  const [nextAppointment, setNextAppointment] = useState<Appointment | undefined>(undefined);
+
+  useEffect(() => {
+    console.log('Appointments loaded:', appointments);
+    console.log('Loading state:', loading);
+    console.log('Error state:', error);
+    if (!loading && appointments.length > 0) {
+      const next = getNextAppointment(appointments);
+      console.log('Next appointment:', next);
+      setNextAppointment(next);
+    }
+  }, [appointments, loading, error]);
 
   if (!user) {
+    console.log('No user found');
     return null;
   }
-
-  const nextAppointment = getNextAppointment(appointments);
 
   const handleSignOut = () => {
     setUser(null);
@@ -65,12 +73,14 @@ export default function DashboardScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Próxima Consulta</Text>
         {loading ? (
-          <Text>Carregando...</Text>
+          <Loading />
+        ) : error ? (
+          <Text style={styles.errorText}>Erro ao carregar consultas: {error}</Text>
         ) : nextAppointment ? (
           <>
             <Text style={styles.appointmentText}>{nextAppointment.therapistName}</Text>
             <Text style={styles.appointmentDate}>
-              {formatarDataHora(ensureDate(nextAppointment.startTime))}
+              {formatarDataHora(nextAppointment.startTime instanceof Timestamp ? nextAppointment.startTime.toDate() : nextAppointment.startTime)}
             </Text>
             <TouchableOpacity 
               style={styles.joinButton}
@@ -229,5 +239,8 @@ const styles = StyleSheet.create({
   hiddenButtonText: {
     color: cores.textoBranco,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: cores.erro,
   },
 });

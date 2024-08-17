@@ -115,7 +115,7 @@ const toTimestamp = (date: Date | Timestamp): Timestamp => {
 
 export const createAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<void> => {
   try {
-    console.log('Creating appointment with data:', appointment);  // Keep this line for debugging
+    console.log('Creating appointment with data:', appointment);
     if (!appointment.patientId) {
       throw new Error('patientId is undefined');
     }
@@ -127,30 +127,54 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id'>): P
       endTime: toTimestamp(appointment.endTime)
     };
     await setDoc(appointmentRef, newAppointment);
+
+    // Create a new chat for this appointment
+    await createChat({
+      id: appointmentRef.id, // Use the same ID as the appointment
+      patientId: appointment.patientId,
+      therapistId: appointment.therapistId,
+      therapistName: appointment.therapistName,
+      lastMessage: 'Conversa iniciada',
+      createdAt: new Date(),
+      lastMessageAt: new Date(),
+    });
+
   } catch (error) {
-    console.error('Error in createAppointment:', error);  // Keep this line for detailed error logging
+    console.error('Error in createAppointment:', error);
     handleFirestoreError(error, 'criar consulta');
   }
 };
 
 // Obtém as consultas de um usuário
-export const getAppointments = async (userId: string, userType: UserType): Promise<Appointment[]> => {
+
+
+export const getAppointments = async (uid: string, userType: UserType): Promise<Appointment[]> => {
+  if (!uid || !userType) {
+    console.error('Invalid uid or userType:', { uid, userType });
+    throw new Error('Invalid uid or userType');
+  }
+
   try {
+    console.log(`Fetching appointments for ${userType} with UID: ${uid}`);
     const fieldName = userType === 'patient' ? 'patientId' : 'therapistId';
-    const appointmentsQuery = query(collection(firestore, 'appointments'), where(fieldName, '==', userId));
+    const appointmentsQuery = query(collection(firestore, 'appointments'), where(fieldName, '==', uid));
     const appointmentDocs = await getDocs(appointmentsQuery);
+    console.log(`Found ${appointmentDocs.size} appointments`);
     return appointmentDocs.docs.map(doc => {
-      const appointmentData = doc.data() as Appointment;
-      if (appointmentData.startTime instanceof Timestamp) {
-        appointmentData.startTime = appointmentData.startTime.toDate();
-      }
-      if (appointmentData.endTime instanceof Timestamp) {
-        appointmentData.endTime = appointmentData.endTime.toDate();
-      }
-      return appointmentData;
+      const data = doc.data();
+      return {
+        id: doc.id,
+        patientId: data.patientId,
+        therapistId: data.therapistId,
+        therapistName: data.therapistName,
+        startTime: data.startTime instanceof Timestamp ? data.startTime.toDate() : new Date(data.startTime),
+        endTime: data.endTime instanceof Timestamp ? data.endTime.toDate() : new Date(data.endTime),
+        status: data.status,
+      };
     });
   } catch (error) {
-    return handleFirestoreError(error, 'obter consultas');
+    console.error('Error fetching appointments:', error);
+    throw new Error('Failed to fetch appointments');
   }
 };
 
@@ -164,10 +188,12 @@ export const createChat = async (chat: Chat): Promise<void> => {
   }
 };
 
-// Obtém os chats de um usuário
 export const getChats = async (userId: string): Promise<Chat[]> => {
   try {
-    const chatsQuery = query(collection(firestore, 'chats'), where('patientId', '==', userId));
+    const chatsQuery = query(
+      collection(firestore, 'chats'),
+      where('patientId', '==', userId)
+    );
     const chatDocs = await getDocs(chatsQuery);
     return chatDocs.docs.map(doc => {
       const chatData = doc.data() as Chat;
@@ -177,26 +203,31 @@ export const getChats = async (userId: string): Promise<Chat[]> => {
       if (chatData.lastMessageAt instanceof Timestamp) {
         chatData.lastMessageAt = chatData.lastMessageAt.toDate();
       }
-      return chatData;
+      return { ...chatData, id: doc.id };
     });
   } catch (error) {
     return handleFirestoreError(error, 'obter chats');
   }
 };
 
-// Cria uma nova mensagem
 export const sendMessage = async (message: Omit<Message, 'id'>): Promise<void> => {
   try {
-    await addDoc(collection(firestore, 'messages'), {
+    const messageRef = await addDoc(collection(firestore, 'messages'), {
       ...message,
-      sentAt: toTimestamp(message.sentAt)
+      sentAt: serverTimestamp()
+    });
+
+    // Update the last message in the chat
+    const chatRef = doc(firestore, `chats/${message.chatId}`);
+    await updateDoc(chatRef, {
+      lastMessage: message.content,
+      lastMessageAt: serverTimestamp()
     });
   } catch (error) {
-    handleFirestoreError(error, 'criar mensagem');
+    handleFirestoreError(error, 'enviar mensagem');
   }
 };
 
-// Obtém as mensagens de um chat
 export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {
     const messagesQuery = query(
@@ -210,7 +241,7 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
       if (messageData.sentAt instanceof Timestamp) {
         messageData.sentAt = messageData.sentAt.toDate();
       }
-      return messageData;
+      return { ...messageData, id: doc.id };
     });
   } catch (error) {
     return handleFirestoreError(error, 'obter mensagens');
