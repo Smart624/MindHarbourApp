@@ -143,35 +143,60 @@ export const getAppointments = async (uid: string, userType: UserType): Promise<
   }
 };
 
+
 export const cancelAppointment = async (appointmentId: string): Promise<void> => {
+  console.log(`Attempting to cancel appointment with ID: ${appointmentId}`);
   try {
     const appointmentRef = doc(firestore, `appointments/${appointmentId}`);
+    console.log(`Fetching appointment document...`);
     const appointmentDoc = await getDoc(appointmentRef);
     
     if (!appointmentDoc.exists()) {
+      console.error(`Appointment with ID ${appointmentId} not found`);
       throw new Error('Appointment not found');
     }
 
     const appointmentData = appointmentDoc.data() as Appointment;
+    console.log(`Current appointment data:`, appointmentData);
     
-    // Update appointment status to cancelled
+    console.log(`Updating appointment status to 'cancelled'...`);
     await updateDoc(appointmentRef, { status: 'cancelled' });
+    
+    // Verify the update
+    const updatedDoc = await getDoc(appointmentRef);
+    const updatedData = updatedDoc.data() as Appointment;
+    console.log(`Updated appointment data:`, updatedData);
+
+    if (updatedData.status !== 'cancelled') {
+      console.error(`Failed to update appointment status. Current status: ${updatedData.status}`);
+      throw new Error('Failed to update appointment status');
+    }
+
+    console.log(`Appointment successfully cancelled in Firestore`);
 
     // Check if there are any other active appointments for this patient-therapist pair
+    console.log(`Checking for other active appointments...`);
     const activeAppointments = await getActiveAppointments(appointmentData.patientId, appointmentData.therapistId);
 
     if (activeAppointments.length === 0) {
+      console.log(`No active appointments found. Archiving chat...`);
       // If no active appointments, archive the chat
       const chat = await getExistingChat(appointmentData.patientId, appointmentData.therapistId);
       if (chat) {
         await updateChat(chat.id, { isArchived: true });
+        console.log(`Chat archived successfully`);
+      } else {
+        console.log(`No existing chat found to archive`);
       }
+    } else {
+      console.log(`Found ${activeAppointments.length} active appointments. Chat not archived.`);
     }
   } catch (error) {
     console.error('Error in cancelAppointment:', error);
-    handleFirestoreError(error, 'cancelar consulta');
+    throw new Error(`Failed to cancel appointment: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
+
 
 export const getChats = async (userId: string): Promise<Chat[]> => {
   try {
