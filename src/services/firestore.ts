@@ -1,12 +1,14 @@
 import { 
   doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs,
-  Timestamp, serverTimestamp, addDoc, orderBy
+  Timestamp, serverTimestamp, addDoc, orderBy, deleteDoc, FieldValue
 } from 'firebase/firestore';
 import { User, Patient, Therapist, UserType } from '../types/user';
 import { Appointment } from '../types/appointment';
-import { Chat, Message } from '../types/chat';
 import { translate } from '../utils/i18n';
 import { firestore } from './firebaseConfig';
+import { runTransaction } from 'firebase/firestore';
+import { Chat, Message } from '../types/chat';
+
 
 type FirestoreData = { [key: string]: any };
 
@@ -25,7 +27,16 @@ const handleFirestoreError = (error: unknown, operation: string): never => {
   throw new Error(translate('Falha ao ' + operation as any));
 };
 
-// Cria um novo usuário
+// Helper function to convert Date or Timestamp to Timestamp
+const toTimestamp = (date: Date | Timestamp): Timestamp => {
+  if (date instanceof Timestamp) {
+    return date;
+  }
+  return Timestamp.fromDate(date);
+};
+
+// User Management Functions
+
 export const createUser = async (user: User): Promise<void> => {
   try {
     const userRef = doc(firestore, `users/${user.id}`);
@@ -35,7 +46,6 @@ export const createUser = async (user: User): Promise<void> => {
   }
 };
 
-// Obtém um usuário pelo ID
 export const getUser = async (userId: string): Promise<User | null> => {
   try {
     const userDoc = await getDoc(doc(firestore, `users/${userId}`));
@@ -55,7 +65,6 @@ export const getUser = async (userId: string): Promise<User | null> => {
   }
 };
 
-// Atualiza um usuário existente
 export const updateUser = async (userId: string, data: Partial<User>): Promise<void> => {
   try {
     const userRef = doc(firestore, `users/${userId}`);
@@ -65,7 +74,6 @@ export const updateUser = async (userId: string, data: Partial<User>): Promise<v
   }
 };
 
-// Cria um novo paciente
 export const createPatient = async (patient: Patient): Promise<void> => {
   try {
     const patientRef = doc(firestore, `patients/${patient.id}`);
@@ -75,7 +83,6 @@ export const createPatient = async (patient: Patient): Promise<void> => {
   }
 };
 
-// Cria um novo terapeuta
 export const createTherapist = async (therapist: Therapist): Promise<void> => {
   try {
     const therapistRef = doc(firestore, `therapists/${therapist.id}`);
@@ -85,7 +92,6 @@ export const createTherapist = async (therapist: Therapist): Promise<void> => {
   }
 };
 
-// Obtém todos os terapeutas
 export const getTherapists = async (): Promise<Therapist[]> => {
   try {
     const therapistsQuery = query(collection(firestore, 'therapists'));
@@ -105,47 +111,6 @@ export const getTherapists = async (): Promise<Therapist[]> => {
   }
 };
 
-// Helper function to convert Date or Timestamp to Timestamp
-const toTimestamp = (date: Date | Timestamp): Timestamp => {
-  if (date instanceof Timestamp) {
-    return date;
-  }
-  return Timestamp.fromDate(date);
-};
-
-export const createAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<void> => {
-  try {
-    console.log('Creating appointment with data:', appointment);
-    if (!appointment.patientId) {
-      throw new Error('patientId is undefined');
-    }
-    const appointmentRef = doc(collection(firestore, 'appointments'));
-    const newAppointment: Appointment = {
-      id: appointmentRef.id,
-      ...appointment,
-      startTime: toTimestamp(appointment.startTime),
-      endTime: toTimestamp(appointment.endTime)
-    };
-    await setDoc(appointmentRef, newAppointment);
-
-    // Create a new chat for this appointment
-    await createChat({
-      id: appointmentRef.id, // Use the same ID as the appointment
-      patientId: appointment.patientId,
-      therapistId: appointment.therapistId,
-      therapistName: appointment.therapistName,
-      lastMessage: 'Conversa iniciada',
-      createdAt: new Date(),
-      lastMessageAt: new Date(),
-    });
-
-  } catch (error) {
-    console.error('Error in createAppointment:', error);
-    handleFirestoreError(error, 'criar consulta');
-  }
-};
-
-// Obtém as consultas de um usuário
 
 
 export const getAppointments = async (uid: string, userType: UserType): Promise<Appointment[]> => {
@@ -178,13 +143,33 @@ export const getAppointments = async (uid: string, userType: UserType): Promise<
   }
 };
 
-// Cria um novo chat
-export const createChat = async (chat: Chat): Promise<void> => {
+export const cancelAppointment = async (appointmentId: string): Promise<void> => {
   try {
-    const chatRef = doc(firestore, `chats/${chat.id}`);
-    await setDoc(chatRef, convertToFirestoreData(chat));
+    const appointmentRef = doc(firestore, `appointments/${appointmentId}`);
+    const appointmentDoc = await getDoc(appointmentRef);
+    
+    if (!appointmentDoc.exists()) {
+      throw new Error('Appointment not found');
+    }
+
+    const appointmentData = appointmentDoc.data() as Appointment;
+    
+    // Update appointment status to cancelled
+    await updateDoc(appointmentRef, { status: 'cancelled' });
+
+    // Check if there are any other active appointments for this patient-therapist pair
+    const activeAppointments = await getActiveAppointments(appointmentData.patientId, appointmentData.therapistId);
+
+    if (activeAppointments.length === 0) {
+      // If no active appointments, archive the chat
+      const chat = await getExistingChat(appointmentData.patientId, appointmentData.therapistId);
+      if (chat) {
+        await updateChat(chat.id, { isArchived: true });
+      }
+    }
   } catch (error) {
-    handleFirestoreError(error, 'criar chat');
+    console.error('Error in cancelAppointment:', error);
+    handleFirestoreError(error, 'cancelar consulta');
   }
 };
 
@@ -192,7 +177,8 @@ export const getChats = async (userId: string): Promise<Chat[]> => {
   try {
     const chatsQuery = query(
       collection(firestore, 'chats'),
-      where('patientId', '==', userId)
+      where('patientId', '==', userId),
+      where('isArchived', '==', false)
     );
     const chatDocs = await getDocs(chatsQuery);
     return chatDocs.docs.map(doc => {
@@ -209,6 +195,33 @@ export const getChats = async (userId: string): Promise<Chat[]> => {
     return handleFirestoreError(error, 'obter chats');
   }
 };
+
+
+const updateChat = async (chatId: string, updates: Partial<Chat>): Promise<void> => {
+  const chatRef = doc(firestore, `chats/${chatId}`);
+  await updateDoc(chatRef, updates);
+};
+
+export const checkAndArchiveChats = async (): Promise<void> => {
+  try {
+    const chatsQuery = query(collection(firestore, 'chats'), where('isArchived', '==', false));
+    const chatDocs = await getDocs(chatsQuery);
+
+    for (const chatDoc of chatDocs.docs) {
+      const chat = chatDoc.data() as Chat;
+      const activeAppointments = await getActiveAppointments(chat.patientId, chat.therapistId);
+
+      if (activeAppointments.length === 0) {
+        await updateChat(chatDoc.id, { isArchived: true });
+      }
+    }
+  } catch (error) {
+    console.error('Error in checkAndArchiveChats:', error);
+    handleFirestoreError(error, 'verificar e arquivar chats');
+  }
+};
+
+// Message Management Functions
 
 export const sendMessage = async (message: Omit<Message, 'id'>): Promise<void> => {
   try {
@@ -247,3 +260,66 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
     return handleFirestoreError(error, 'obter mensagens');
   }
 };
+
+// Utility Functions
+
+const getActiveAppointments = async (patientId: string, therapistId: string): Promise<Appointment[]> => {
+  const appointmentsQuery = query(
+    collection(firestore, 'appointments'),
+    where('patientId', '==', patientId),
+    where('therapistId', '==', therapistId),
+    where('status', '==', 'scheduled')
+  );
+  const appointmentDocs = await getDocs(appointmentsQuery);
+  return appointmentDocs.docs.map(doc => ({ ...doc.data(), id: doc.id } as Appointment));
+};
+
+
+const generateChatUniqueId = (patientId: string, therapistId: string): string => {
+  return `chat_${patientId}_${therapistId}`;
+};
+
+// ... other imports and helper functions ...
+
+
+
+export const createAppointment = async (appointment: Omit<Appointment, 'id'>): Promise<string> => {
+  console.log('Creating appointment in Firestore:', appointment);
+  const appointmentRef = doc(collection(firestore, 'appointments'));
+  const newAppointment: Appointment = {
+    id: appointmentRef.id,
+    ...appointment,
+    startTime: toTimestamp(appointment.startTime),
+    endTime: toTimestamp(appointment.endTime)
+  };
+  await setDoc(appointmentRef, newAppointment);
+  console.log('Appointment created successfully in Firestore');
+  return appointmentRef.id;
+};
+
+
+
+export const getExistingChat = async (patientId: string, therapistId: string): Promise<Chat | null> => {
+  console.log('Getting existing chat:', { patientId, therapistId });
+  try {
+    const chatUniqueId = `${patientId}-${therapistId}`;
+    const chatQuery = query(
+      collection(firestore, 'chats'),
+      where('chatUniqueId', '==', chatUniqueId)
+    );
+    const chatDocs = await getDocs(chatQuery);
+    console.log('Existing chat query result:', chatDocs.size);
+
+    if (!chatDocs.empty) {
+      console.log('Existing chat found');
+      const chatData = chatDocs.docs[0].data() as Chat;
+      return { ...chatData, id: chatDocs.docs[0].id };
+    }
+    console.log('No existing chat found');
+    return null;
+  } catch (error) {
+    console.error('Error in getExistingChat:', error);
+    throw new Error(`Failed to get existing chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
