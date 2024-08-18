@@ -6,6 +6,7 @@ import Button from '../../src/components/common/Button';
 import { cadastrar, getAuthErrorMessage } from '../../src/services/auth';
 import cores from '../../src/constants/colors';
 import { useGlobalAuthState } from '../../src/globalAuthState';
+import { User } from '../../src/types/user';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -31,12 +32,12 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      const user = await cadastrar(email, senha, {
+      const newUser = await cadastrar(email, senha, {
         firstName: nome,
         lastName: sobrenome,
         userType: 'patient',
       });
-      setUser(user);
+      setUser(newUser as User);
       Alert.alert(
         "Cadastro Realizado",
         "Sua conta foi criada com sucesso.",

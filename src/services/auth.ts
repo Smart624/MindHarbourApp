@@ -13,12 +13,13 @@ import { auth, firestore } from './firebaseConfig';
 export const cadastrar = async (
   email: string, 
   senha: string, 
-  dados: Omit<Patient | Therapist, 'id' | 'createdAt' | 'updatedAt' | 'email'>
+  dados: Omit<Patient | Therapist, 'id' | 'createdAt' | 'updatedAt' | 'email' | 'uid'>
 ): Promise<User> => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
     const user: User = {
       id: userCredential.user.uid,
+      uid: userCredential.user.uid, // Add this line
       email: email,
       ...dados,
       createdAt: new Date(),
@@ -37,7 +38,10 @@ export const entrar = async (email: string, senha: string): Promise<User> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     const userDoc = await getDoc(doc(firestore, 'users', userCredential.user.uid));
     if (userDoc.exists()) {
-      return userDoc.data() as User;
+      const userData = userDoc.data() as User;
+      // Ensure uid is set correctly
+      userData.uid = userCredential.user.uid;
+      return userData;
     } else {
       throw new Error('Dados do usuário não encontrados');
     }
@@ -46,6 +50,7 @@ export const entrar = async (email: string, senha: string): Promise<User> => {
     throw new Error('Falha ao entrar. Verifique seu email e senha.');
   }
 };
+
 
 export const sair = async (): Promise<void> => {
   try {
