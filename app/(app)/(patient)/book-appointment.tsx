@@ -5,7 +5,7 @@ import Calendar from '../../../src/components/common/Calendar';
 import Button from '../../../src/components/common/Button';
 import cores from '../../../src/constants/colors';
 import { formatarData, formatarDataHora } from '../../../src/utils/dateHelpers';
-import { createAppointment } from '../../../src/services/firestore';
+import { createAppointment, getExistingChat } from '../../../src/services/firestore';
 import { useGlobalAuthState } from '../../../src/globalAuthState';
 
 export default function BookAppointmentScreen() {
@@ -24,44 +24,52 @@ export default function BookAppointmentScreen() {
     setSelectedTime(time);
   };
 
-  const handleConfirmAppointment = async () => {
-    if (selectedDate && selectedTime && user) {
-      try {
-        console.log('User object:', user);
-        if (!user.uid && !user.id) {
-          throw new Error('User ID is undefined');
-        }
-
-        const startTime = new Date(selectedDate);
-        const [hours, minutes] = selectedTime.split(':');
-        startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-        
-        const endTime = new Date(startTime);
-        endTime.setHours(endTime.getHours() + 1);  // Assuming 1-hour appointments
-        
-        await createAppointment({
-          patientId: user.uid || user.id,
-          therapistId,
-          therapistName,
-          startTime,
-          endTime,
-          status: 'scheduled'
-        });
-        
-        Alert.alert(
-          "Agendamento Confirmado",
-          `Sua consulta com ${therapistName} foi agendada para ${formatarDataHora(startTime)}.`,
-          [{ text: "OK", onPress: () => router.push('/(tabs)') }]
-        );
-      } catch (error) {
-        console.error('Error booking appointment:', error);
-        Alert.alert("Erro", "Não foi possível agendar a consulta. Por favor, tente novamente.");
+ const handleConfirmAppointment = async () => {
+  if (selectedDate && selectedTime && user) {
+    try {
+      console.log('Confirming appointment:', { selectedDate, selectedTime, user });
+      if (!user.uid && !user.id) {
+        throw new Error('User ID is undefined');
       }
-    } else {
-      console.error('Missing required data:', { selectedDate, selectedTime, user });
-      Alert.alert("Erro", "Por favor, selecione uma data e horário e certifique-se de que está logado.");
+
+      const startTime = new Date(selectedDate);
+      const [hours, minutes] = selectedTime.split(':');
+      startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      const endTime = new Date(startTime);
+      endTime.setHours(endTime.getHours() + 1);
+
+      console.log('Creating appointment with:', {
+        patientId: user.uid || user.id,
+        therapistId,
+        therapistName,
+        startTime,
+        endTime
+      });
+
+      await createAppointment({
+        patientId: user.uid || user.id,
+        therapistId,
+        therapistName,
+        startTime,
+        endTime,
+        status: 'scheduled'
+      });
+
+      console.log('Appointment created successfully');
+      Alert.alert(
+        "Agendamento Confirmado",
+        `Sua consulta com ${therapistName} foi agendada para ${formatarDataHora(startTime)}.`,
+        [{ text: "OK", onPress: () => router.push('/(tabs)') }]
+      );
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      Alert.alert("Erro", "Não foi possível agendar a consulta. Por favor, tente novamente.");
     }
-  };
+  } else {
+    console.error('Missing required data:', { selectedDate, selectedTime, user });
+    Alert.alert("Erro", "Por favor, selecione uma data e horário e certifique-se de que está logado.");
+  }
+};
   
   // Mock available times - in a real app, these would come from an API
   const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];

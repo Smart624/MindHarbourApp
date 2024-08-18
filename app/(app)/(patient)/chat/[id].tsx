@@ -60,8 +60,14 @@ export default function ChatConversationScreen() {
       styles.messageBubble,
       item.senderId === user?.uid ? styles.sentMessage : styles.receivedMessage
     ]}>
-      <Text style={styles.messageText}>{item.content}</Text>
-      <Text style={styles.messageTime}>
+      <Text style={[
+        styles.messageText,
+        item.senderId === user?.uid ? styles.sentMessageText : styles.receivedMessageText
+      ]}>{item.content}</Text>
+      <Text style={[
+        styles.messageTime,
+        item.senderId === user?.uid ? styles.sentMessageTime : styles.receivedMessageTime
+      ]}>
         {formatarDataHora(item.sentAt instanceof Timestamp ? item.sentAt.toDate() : item.sentAt)}
       </Text>
     </View>
@@ -109,7 +115,7 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '80%',
-    padding: 10,
+    padding: 12,
     borderRadius: 20,
     marginVertical: 5,
   },
@@ -122,14 +128,25 @@ const styles = StyleSheet.create({
     backgroundColor: cores.textoBranco,
   },
   messageText: {
-    color: cores.texto,
     fontSize: 16,
+  },
+  sentMessageText: {
+    color: cores.textoBranco,
+  },
+  receivedMessageText: {
+    color: cores.texto,
   },
   messageTime: {
     fontSize: 12,
-    color: cores.desativado,
-    alignSelf: 'flex-end',
     marginTop: 5,
+  },
+  sentMessageTime: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    alignSelf: 'flex-end',
+  },
+  receivedMessageTime: {
+    color: cores.desativado,
+    alignSelf: 'flex-start',
   },
   inputContainer: {
     flexDirection: 'row',
