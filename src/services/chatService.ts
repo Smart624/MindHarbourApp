@@ -1,8 +1,9 @@
 import { 
-    doc, setDoc, collection, query, where, getDocs, serverTimestamp, updateDoc
-  } from 'firebase/firestore';
+    doc, setDoc, collection, query, where, getDocs, serverTimestamp, updateDoc, orderBy, limit
+    } from 'firebase/firestore';
   import { Chat } from '../types/chat';
   import { firestore } from './firebaseConfig';
+
   
   export const createOrGetChat = async (patientId: string, therapistId: string, therapistName: string): Promise<Chat> => {
     console.log('Creating or getting chat:', { patientId, therapistId, therapistName });

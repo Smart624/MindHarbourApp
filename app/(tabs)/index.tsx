@@ -40,8 +40,11 @@ export default function DashboardScreen() {
       const next = getNextAppointment(appointments);
       console.log('Next appointment:', next);
       setNextAppointment(next);
+    } else {
+      setNextAppointment(undefined);
     }
   }, [appointments, loading, error]);
+
 
   if (!user) {
     console.log('No user found');

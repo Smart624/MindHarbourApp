@@ -14,7 +14,9 @@ export const useAppointments = () => {
       try {
         setLoading(true);
         const fetchedAppointments = await getAppointments(user.uid, user.userType);
-        setAppointments(fetchedAppointments);
+        // Filter to only include scheduled appointments
+        const scheduledAppointments = fetchedAppointments.filter(app => app.status === 'scheduled');
+        setAppointments(scheduledAppointments);
         setError(null);
       } catch (err) {
         console.error('Error fetching appointments:', err);

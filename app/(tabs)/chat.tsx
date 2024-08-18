@@ -23,8 +23,10 @@ export default function ChatListScreen() {
   const fetchChats = async () => {
     if (user) {
       try {
+        setLoading(true);
         const fetchedChats = await getChats(user.uid);
         setChats(fetchedChats);
+        setError(null);
       } catch (error) {
         console.error('Error fetching chats:', error);
         setError('Failed to fetch chats');
@@ -44,7 +46,6 @@ export default function ChatListScreen() {
     >
       <View style={styles.chatInfo}>
         <Text style={styles.therapistName}>{item.therapistName}</Text>
-        <Text style={styles.lastMessage}>{item.lastMessage}</Text>
         <Text style={styles.timestamp}>
           {formatarData((item.lastMessageAt instanceof Timestamp ? item.lastMessageAt.toDate() : item.lastMessageAt) as Date)}
         </Text>
@@ -83,42 +84,43 @@ const styles = StyleSheet.create({
     backgroundColor: cores.fundo,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     color: cores.texto,
     marginBottom: 20,
+    textAlign: 'center',
   },
   chatItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: cores.textoBranco,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
   chatInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     color: cores.texto,
   },
-  lastMessage: {
+  timestamp: {
     fontSize: 14,
     color: cores.desativado,
-    marginTop: 5,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: cores.desativado,
-    alignSelf: 'flex-end',
+    marginTop: 8,
   },
   noChats: {
-    fontSize: 16,
+    fontSize: 18,
     color: cores.desativado,
     textAlign: 'center',
+    marginTop: 20,
   },
   errorText: {
     fontSize: 16,
