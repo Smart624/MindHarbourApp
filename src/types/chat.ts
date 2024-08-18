@@ -10,8 +10,8 @@ export interface Chat {
   therapistId: string;
   therapistName: string;
   lastMessage: string;
-  createdAt: Date | Timestamp;
-  lastMessageAt: Date | Timestamp;
+  createdAt: Date | Timestamp | FieldValue;
+  lastMessageAt: Date | Timestamp | FieldValue;
   isArchived: boolean;
 }
 
