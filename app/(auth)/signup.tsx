@@ -1,8 +1,5 @@
-
-// app/(auth)/signup.tsx
-
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Input from '../../src/components/common/Input';
 import Button from '../../src/components/common/Button';
@@ -37,7 +34,7 @@ export default function SignupScreen() {
       const user = await cadastrar(email, senha, {
         firstName: nome,
         lastName: sobrenome,
-        userType: 'patient', // Assuming default signup is for patients
+        userType: 'patient',
       });
       setUser(user);
       Alert.alert(
@@ -55,7 +52,7 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Crie sua Conta MindHarbor</Text>
       <Input
         label="Nome"
@@ -91,19 +88,22 @@ export default function SignupScreen() {
         placeholder="Confirme sua senha"
         secureTextEntry
       />
-      <Button title="Cadastrar" onPress={handleSignup} loading={loading} />
-      <Button 
-        title="Já tem uma conta? Entre" 
-        onPress={() => router.push('/login')} 
-        variant="outline"
-      />
-    </View>
+      <View style={styles.buttonContainer}>
+        <Button title="Cadastrar" onPress={handleSignup} loading={loading} style={styles.signupButton} />
+        <Button 
+          title="Já tem uma conta? Entre" 
+          onPress={() => router.push('/login')} 
+          variant="outline"
+          style={styles.loginButton}
+        />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
     justifyContent: 'center',
     backgroundColor: cores.fundo,
@@ -114,5 +114,14 @@ const styles = StyleSheet.create({
     color: cores.texto,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  buttonContainer: {
+    marginTop: 20,
+  },
+  signupButton: {
+    marginBottom: 15,
+  },
+  loginButton: {
+    marginTop: 5,
   },
 });

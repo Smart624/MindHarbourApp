@@ -46,7 +46,7 @@ export default function ChatListScreen() {
         <Text style={styles.therapistName}>{item.therapistName}</Text>
         <Text style={styles.lastMessage}>{item.lastMessage}</Text>
         <Text style={styles.timestamp}>
-          {formatarData(item.lastMessageAt instanceof Timestamp ? item.lastMessageAt.toDate() : item.lastMessageAt)}
+          {formatarData((item.lastMessageAt instanceof Timestamp ? item.lastMessageAt.toDate() : item.lastMessageAt) as Date)}
         </Text>
       </View>
     </TouchableOpacity>

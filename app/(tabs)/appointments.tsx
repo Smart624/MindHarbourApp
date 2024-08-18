@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Animated } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Timestamp } from 'firebase/firestore';
 import { Feather } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ export default function AppointmentsScreen() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [markedDates, setMarkedDates] = useState({});
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     setAppointments(fetchedAppointments);
@@ -36,6 +37,19 @@ export default function AppointmentsScreen() {
     updateMarkedDates();
   }, [appointments, updateMarkedDates]);
 
+  const fadeIn = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  const handleDateSelect = (day: any) => {
+    setSelectedDate(day.dateString);
+    fadeIn();
+  };
+
   const handleCancelAppointment = async (appointmentId: string) => {
     Alert.alert(
       "Cancelar Consulta",
@@ -46,26 +60,28 @@ export default function AppointmentsScreen() {
           text: "Sim", 
           onPress: async () => {
             try {
-              // Immediately update local state
+              // Update Firestore first
+              await cancelAppointment(appointmentId);
+              
+              // Show success message
+              await new Promise<void>((resolve) => {
+                Alert.alert("Sucesso", "Consulta cancelada com sucesso.", [
+                  { text: "OK", onPress: () => resolve() }
+                ]);
+              });
+
+              // Update local state after success message
               setAppointments(prevAppointments => 
                 prevAppointments.map(app => 
                   app.id === appointmentId ? { ...app, status: 'cancelled' } : app
                 )
               );
 
-              // Update Firestore
-              await cancelAppointment(appointmentId);
-              console.log(`Appointment cancellation successful.`);
-
               // Refetch appointments to ensure consistency
               await refetchAppointments();
-
-              Alert.alert("Sucesso", "Consulta cancelada com sucesso.");
             } catch (error) {
               console.error('Error cancelling appointment:', error);
               Alert.alert("Erro", `Não foi possível cancelar a consulta. Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-              // Revert local change if Firestore update failed
-              await refetchAppointments();
             }
           }
         }
@@ -106,23 +122,49 @@ export default function AppointmentsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Suas Consultas</Text>
-      <Calendar
-        markedDates={markedDates}
-        onDayPress={(day) => setSelectedDate(day.dateString)}
-        theme={{
-          selectedDayBackgroundColor: cores.primaria,
-          todayTextColor: cores.primaria,
-          arrowColor: cores.primaria,
-        }}
-      />
-      {selectedDate && (
-        <FlatList
-          data={selectedDateAppointments}
-          renderItem={renderAppointmentItem}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={styles.noAppointments}>Nenhuma consulta nesta data</Text>}
+      <View style={styles.header}>
+        <Feather name="calendar" size={24} color={cores.primaria} />
+        <Text style={styles.title}>Suas Consultas</Text>
+      </View>
+      <View style={styles.calendarContainer}>
+        <Calendar
+          markedDates={markedDates}
+          onDayPress={handleDateSelect}
+          theme={{
+            backgroundColor: cores.fundo,
+            calendarBackground: cores.textoBranco,
+            textSectionTitleColor: cores.texto,
+            selectedDayBackgroundColor: cores.primaria,
+            selectedDayTextColor: cores.textoBranco,
+            todayTextColor: cores.primaria,
+            dayTextColor: cores.texto,
+            textDisabledColor: cores.desativado,
+            dotColor: cores.secundaria,
+            selectedDotColor: cores.textoBranco,
+            arrowColor: cores.primaria,
+            monthTextColor: cores.texto,
+            textDayFontFamily: 'System',
+            textMonthFontFamily: 'System',
+            textDayHeaderFontFamily: 'System',
+            textDayFontWeight: '300',
+            textMonthFontWeight: 'bold',
+            textDayHeaderFontWeight: '300',
+            textDayFontSize: 16,
+            textMonthFontSize: 18,
+            textDayHeaderFontSize: 14
+          }}
         />
+      </View>
+      {selectedDate && (
+        <Animated.View style={[styles.appointmentsContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.sectionTitle}>Consultas agendadas:</Text>
+          <FlatList
+            data={selectedDateAppointments}
+            renderItem={renderAppointmentItem}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={<Text style={styles.noAppointments}>Nenhuma consulta nesta data</Text>}
+          />
+        </Animated.View>
       )}
     </View>
   );
@@ -134,20 +176,52 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: cores.fundo,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: cores.texto,
-    marginBottom: 20,
+    marginLeft: 10,
+  },
+  calendarContainer: {
+    backgroundColor: cores.textoBranco,
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  appointmentsContainer: {
+    marginTop: 20,
+    backgroundColor: cores.textoBranco,
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: cores.texto,
+    marginBottom: 10,
   },
   appointmentItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: cores.textoBranco,
+    backgroundColor: cores.fundo,
     borderRadius: 8,
     padding: 15,
-    marginTop: 10,
+    marginBottom: 10,
   },
   appointmentInfo: {
     flex: 1,
@@ -169,17 +243,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: cores.desativado,
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   errorText: {
     fontSize: 16,
-    color: cores.desativado,
+    color: cores.erro,
     textAlign: 'center',
     marginTop: 20,
-  },
-  statusText: {
-    fontSize: 14,
-    color: cores.desativado,
-    fontStyle: 'italic',
   },
 });

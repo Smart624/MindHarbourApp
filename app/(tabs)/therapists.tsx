@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import cores from '../../src/constants/colors';
@@ -35,13 +35,15 @@ export default function TherapistsScreen() {
   };
 
   const handleSpecializationFilter = (specialization: string) => {
-    setSelectedSpecialization(specialization);
-    applyFilters(searchQuery, specialization, selectedLanguage);
+    const newSpecialization = selectedSpecialization === specialization ? '' : specialization;
+    setSelectedSpecialization(newSpecialization);
+    applyFilters(searchQuery, newSpecialization, selectedLanguage);
   };
 
   const handleLanguageFilter = (language: string) => {
-    setSelectedLanguage(language);
-    applyFilters(searchQuery, selectedSpecialization, language);
+    const newLanguage = selectedLanguage === language ? '' : language;
+    setSelectedLanguage(newLanguage);
+    applyFilters(searchQuery, selectedSpecialization, newLanguage);
   };
 
   const applyFilters = (query: string, specialization: string, language: string) => {
@@ -90,51 +92,57 @@ export default function TherapistsScreen() {
         />
       </View>
       <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, selectedSpecialization ? styles.filterButtonActive : null]}
-          onPress={() => setSelectedSpecialization('')}
-        >
-          <Text style={styles.filterButtonText}>Especialização</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, selectedLanguage ? styles.filterButtonActive : null]}
-          onPress={() => setSelectedLanguage('')}
-        >
-          <Text style={styles.filterButtonText}>Idioma</Text>
-        </TouchableOpacity>
-      </View>
-      {selectedSpecialization === '' && (
         <FlatList
           data={specializations}
           horizontal
           showsHorizontalScrollIndicator={false}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.filterOption}
+              style={[
+                styles.filterButton,
+                selectedSpecialization === item ? styles.filterButtonActive : null,
+              ]}
               onPress={() => handleSpecializationFilter(item)}
             >
-              <Text>{item}</Text>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  selectedSpecialization === item ? styles.filterButtonTextActive : null,
+                ]}
+              >
+                {item}
+              </Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item}
+          contentContainerStyle={styles.filterList}
         />
-      )}
-      {selectedLanguage === '' && (
         <FlatList
           data={languages}
           horizontal
           showsHorizontalScrollIndicator={false}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.filterOption}
+              style={[
+                styles.filterButton,
+                selectedLanguage === item ? styles.filterButtonActive : null,
+              ]}
               onPress={() => handleLanguageFilter(item)}
             >
-              <Text>{item}</Text>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  selectedLanguage === item ? styles.filterButtonTextActive : null,
+                ]}
+              >
+                {item}
+              </Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item}
+          contentContainerStyle={styles.filterList}
         />
-      )}
+      </View>
       <FlatList
         data={filteredTherapists}
         renderItem={({ item }) => (
@@ -162,6 +170,11 @@ const styles = StyleSheet.create({
     margin: 15,
     borderRadius: 8,
     paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   searchIcon: {
     marginRight: 10,
@@ -172,26 +185,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    marginHorizontal: 15,
     marginBottom: 10,
   },
+  filterList: {
+    paddingVertical: 10,
+  },
   filterButton: {
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
     backgroundColor: cores.desativado,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   filterButtonActive: {
     backgroundColor: cores.primaria,
+    elevation: 4,
   },
   filterButtonText: {
-    color: cores.textoBranco,
+    color: cores.textoEscuro,
+    fontSize: 14,
   },
-  filterOption: {
-    padding: 10,
-    marginHorizontal: 5,
-    backgroundColor: cores.textoBranco,
-    borderRadius: 5,
+  filterButtonTextActive: {
+    color: cores.textoBranco,
   },
   listContainer: {
     padding: 15,

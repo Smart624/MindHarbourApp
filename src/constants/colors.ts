@@ -8,6 +8,8 @@ const cores = {
   alerta: '#FFCC00', // Amarelo para alertas
   sucesso: '#34C759', // Verde para sucesso
   desativado: '#C7C7CC', // Cinza para itens desativados
+  textoEscuro: '#000000', // Preto para texto em fundos claros
+
 };
 
 export default cores;

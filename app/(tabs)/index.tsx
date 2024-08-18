@@ -117,22 +117,18 @@ export default function DashboardScreen() {
           <Feather name="users" size={24} color={cores.primaria} />
           <Text style={styles.actionText}>Comunidade</Text>
         </TouchableOpacity>
-      </View>
-
-      <Button title="Sair" onPress={handleSignOut} style={styles.signOutButton} />
-
-      {__DEV__ && (
         <TouchableOpacity
           style={styles.hiddenButton}
           onPress={() => navigateTo('/(app)/(patient)/hidden-therapist-creation')}
         >
           <Text style={styles.hiddenButtonText}>Criar Terapeuta (Oculto)</Text>
         </TouchableOpacity>
-      )}
+      </View>
+
+      <Button title="Sair" onPress={handleSignOut} style={styles.signOutButton} />
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -225,20 +221,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-  signOutButton: {
-    marginHorizontal: 20,
-    marginTop: 20,
-  },
   hiddenButton: {
-    backgroundColor: cores.erro,
-    padding: 10,
-    borderRadius: 8,
-    margin: 20,
+    width: '48%',
+    backgroundColor: cores.textoBranco,
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 15,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    opacity: 0, // Tornando o botão invisível
   },
   hiddenButtonText: {
     color: cores.textoBranco,
     fontWeight: 'bold',
+  },
+  signOutButton: {
+    marginHorizontal: 20,
+    marginTop: 20,
   },
   errorText: {
     color: cores.erro,

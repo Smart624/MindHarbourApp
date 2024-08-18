@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import Calendar from '../../../src/components/common/Calendar';
 import Button from '../../../src/components/common/Button';
 import cores from '../../../src/constants/colors';
@@ -15,10 +16,22 @@ export default function BookAppointmentScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const router = useRouter();
   const { user } = useGlobalAuthState();
+  const [fadeAnim] = useState(new Animated.Value(0));
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
+  const fadeIn = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  const handleDateSelect = (day: any) => {
+    const [year, month, date] = day.dateString.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, date);
+    setSelectedDate(selectedDate);
     setSelectedTime(null);
+    fadeIn();
   };
 
   const handleTimeSelect = (time: string) => {
@@ -28,18 +41,16 @@ export default function BookAppointmentScreen() {
   const handleConfirmAppointment = async () => {
     if (selectedDate && selectedTime && user) {
       try {
-        console.log('Confirming appointment:', { selectedDate, selectedTime, user, therapistId, therapistName });
         if (!user.uid) {
           throw new Error('User ID is undefined');
         }
 
+        const [hours, minutes] = selectedTime.split(':').map(Number);
         const startTime = new Date(selectedDate);
-        const [hours, minutes] = selectedTime.split(':');
-        startTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        startTime.setHours(hours, minutes, 0, 0);
         const endTime = new Date(startTime);
         endTime.setHours(endTime.getHours() + 1);
 
-        // Create appointment
         await createAppointment({
           patientId: user.uid,
           therapistId,
@@ -48,12 +59,8 @@ export default function BookAppointmentScreen() {
           endTime,
           status: 'scheduled'
         });
-        console.log('Appointment created successfully');
 
-        // Create or get chat
-        console.log('Creating or getting chat');
-        const chat = await createOrGetChat(user.uid, therapistId, therapistName);
-        console.log('Chat created or retrieved:', chat);
+        await createOrGetChat(user.uid, therapistId, therapistName);
 
         Alert.alert(
           "Agendamento Confirmado",
@@ -65,25 +72,28 @@ export default function BookAppointmentScreen() {
         Alert.alert("Erro", `Não foi possível agendar a consulta. Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       }
     } else {
-      console.error('Missing required data:', { selectedDate, selectedTime, user });
       Alert.alert("Erro", "Por favor, selecione uma data e horário e certifique-se de que está logado.");
     }
   };
 
-
-  
   const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Agendar Consulta</Text>
+      <View style={styles.header}>
+        <Feather name="calendar" size={24} color={cores.primaria} />
+        <Text style={styles.title}>Agendar Consulta</Text>
+      </View>
       <Text style={styles.subtitle}>Com {therapistName}</Text>
 
-      <Text style={styles.sectionTitle}>Selecione uma data:</Text>
-      <Calendar onDayPress={(day) => handleDateSelect(new Date(day.timestamp))} />
+      <View style={styles.calendarContainer}>
+        <Calendar 
+          onDayPress={handleDateSelect}
+        />
+      </View>
 
       {selectedDate && (
-        <View>
+        <Animated.View style={[styles.timeSection, { opacity: fadeAnim }]}>
           <Text style={styles.sectionTitle}>Horários disponíveis para {formatarData(selectedDate)}:</Text>
           <View style={styles.timeContainer}>
             {availableTimes.map((time) => (
@@ -97,7 +107,7 @@ export default function BookAppointmentScreen() {
               />
             ))}
           </View>
-        </View>
+        </Animated.View>
       )}
 
       <Button
@@ -110,23 +120,37 @@ export default function BookAppointmentScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: cores.fundo,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: cores.texto,
-    marginBottom: 10,
+    marginLeft: 10,
   },
   subtitle: {
     fontSize: 18,
     color: cores.texto,
     marginBottom: 20,
+  },
+  calendarContainer: {
+    backgroundColor: cores.textoBranco,
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
@@ -134,6 +158,17 @@ const styles = StyleSheet.create({
     color: cores.texto,
     marginTop: 20,
     marginBottom: 10,
+  },
+  timeSection: {
+    backgroundColor: cores.textoBranco,
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 20,
+    shadowColor: cores.texto,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   timeContainer: {
     flexDirection: 'row',
@@ -146,5 +181,6 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     marginTop: 30,
+    backgroundColor: cores.primaria,
   },
 });

@@ -1,5 +1,3 @@
-// app/(auth)/login.tsx
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -55,12 +53,20 @@ export default function LoginScreen() {
         placeholder="Sua senha"
         secureTextEntry
       />
-      <Button title="Entrar" onPress={handleLogin} loading={loading} />
-      <Button 
-        title="Criar Conta" 
-        onPress={() => router.push('/signup')} 
-        variant="outline"
-      />
+      <View style={styles.buttonContainer}>
+        <Button 
+          title="Entrar" 
+          onPress={handleLogin} 
+          loading={loading} 
+          style={styles.loginButton}
+        />
+        <Button 
+          title="Criar Conta" 
+          onPress={() => router.push('/signup')} 
+          variant="outline"
+          style={styles.signupButton}
+        />
+      </View>
     </View>
   );
 }
@@ -78,5 +84,14 @@ const styles = StyleSheet.create({
     color: cores.texto,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  buttonContainer: {
+    marginTop: 20,
+  },
+  loginButton: {
+    marginBottom: 10,
+  },
+  signupButton: {
+    marginTop: 10,
   },
 });
