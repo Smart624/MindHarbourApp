@@ -225,21 +225,24 @@ export const checkAndArchiveChats = async (): Promise<void> => {
 
 export const sendMessage = async (message: Omit<Message, 'id'>): Promise<void> => {
   try {
+    // Add the new message to the 'messages' collection
     const messageRef = await addDoc(collection(firestore, 'messages'), {
       ...message,
       sentAt: serverTimestamp()
     });
 
-    // Update the last message in the chat
-    const chatRef = doc(firestore, `chats/${message.chatId}`);
+    // Update the last message and timestamp in the corresponding chat document
+    const chatRef = doc(firestore, 'chats', message.chatId);
     await updateDoc(chatRef, {
       lastMessage: message.content,
       lastMessageAt: serverTimestamp()
     });
   } catch (error) {
-    handleFirestoreError(error, 'enviar mensagem');
+    console.error('Error sending message:', error);
+    throw new Error('Failed to send message');
   }
 };
+
 
 export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {

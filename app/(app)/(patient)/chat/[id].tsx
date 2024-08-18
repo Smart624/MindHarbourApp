@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, query, orderBy, onSnapshot, serverTimestamp, where, doc, deleteDoc } from 'firebase/firestore';
 import cores from '../../../../src/constants/colors';
 import { useGlobalAuthState } from '../../../../src/globalAuthState';
-import { getMessages, sendMessage, subscribeToMessages } from '../../../../src/services/firestore';
+import { sendMessage } from '../../../../src/services/firestore';
 import { Message } from '../../../../src/types/chat';
 import { formatarDataHora } from '../../../../src/utils/dateHelpers';
+import { firestore } from '../../../../src/services/firebaseConfig';
 
 export default function ChatConversationScreen() {
   const { id: chatId } = useLocalSearchParams<{ id: string }>();
@@ -17,26 +18,27 @@ export default function ChatConversationScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    let unsubscribe: () => void;
+    if (!chatId) return;
 
-    const fetchMessages = async () => {
-      if (chatId) {
-        const fetchedMessages = await getMessages(chatId);
-        setMessages(fetchedMessages);
+    const q = query(
+      collection(firestore, 'messages'),
+      where('chatId', '==', chatId),
+      orderBy('sentAt', 'desc')
+    );
 
-        unsubscribe = subscribeToMessages(chatId, (newMessages) => {
-          setMessages(newMessages);
-        });
-      }
-    };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        sentAt: doc.data().sentAt instanceof Timestamp ? doc.data().sentAt.toDate() : new Date(doc.data().sentAt)
+      } as Message));
+      setMessages(updatedMessages);
+    }, (error) => {
+      console.error("Error fetching messages:", error);
+      Alert.alert("Error", "Failed to load messages. Please try again.");
+    });
 
-    fetchMessages();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    return () => unsubscribe();
   }, [chatId]);
 
   const handleSendMessage = async () => {
@@ -46,32 +48,63 @@ export default function ChatConversationScreen() {
           chatId,
           senderId: user.uid,
           content: newMessage.trim(),
-          sentAt: new Date()
+          sentAt: serverTimestamp() as any
         });
         setNewMessage('');
       } catch (error) {
         console.error('Error sending message:', error);
+        Alert.alert("Error", "Failed to send message. Please try again.");
       }
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View style={[
-      styles.messageBubble,
-      item.senderId === user?.uid ? styles.sentMessage : styles.receivedMessage
-    ]}>
-      <Text style={[
-        styles.messageText,
-        item.senderId === user?.uid ? styles.sentMessageText : styles.receivedMessageText
-      ]}>{item.content}</Text>
-      <Text style={[
-        styles.messageTime,
-        item.senderId === user?.uid ? styles.sentMessageTime : styles.receivedMessageTime
+  const deleteMessage = async (messageId: string) => {
+    try {
+      await deleteDoc(doc(firestore, 'messages', messageId));
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      Alert.alert("Error", "Failed to delete message. Please try again.");
+    }
+  };
+
+  const handleLongPress = useCallback((message: Message) => {
+    Alert.alert(
+      "Delete Message",
+      "Are you sure you want to delete this message?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: () => deleteMessage(message.id)
+        }
+      ]
+    );
+  }, []);
+
+  const renderMessage = useCallback(({ item }: { item: Message }) => (
+    <TouchableOpacity
+      onLongPress={() => handleLongPress(item)}
+      delayLongPress={500}
+      activeOpacity={0.7}
+    >
+      <View style={[
+        styles.messageBubble,
+        item.senderId === user?.uid ? styles.sentMessage : styles.receivedMessage
       ]}>
-        {formatarDataHora(item.sentAt instanceof Timestamp ? item.sentAt.toDate() : item.sentAt)}
-      </Text>
-    </View>
-  );
+        <Text style={[
+          styles.messageText,
+          item.senderId === user?.uid ? styles.sentMessageText : styles.receivedMessageText
+        ]}>{item.content}</Text>
+        <Text style={[
+          styles.messageTime,
+          item.senderId === user?.uid ? styles.sentMessageTime : styles.receivedMessageTime
+        ]}>
+          {formatarDataHora(item.sentAt)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  ), [user, handleLongPress]);
 
   return (
     <KeyboardAvoidingView 
