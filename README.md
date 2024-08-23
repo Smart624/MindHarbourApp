@@ -83,4 +83,44 @@ Este guia irá orientá-lo através do processo de configuração e execução d
 - Para começar a desenvolver, você pode editar os arquivos neste diretório.
 - Consulte a [documentação do Expo](https://docs.expo.dev/) para obter mais informações sobre como desenvolver seu aplicativo.
 
-Parabéns! Você configurou e executou com sucesso seu aplicativo Expo. Bom desenvolvimento!
+## Executando o Aplicativo no Simulador do Android Studio
+
+Se você preferir usar um emulador em vez de um dispositivo físico, você pode usar o Simulador do Android Studio. Aqui estão as etapas para configurar e usar o Simulador do Android Studio:
+
+### Configuração do Android Studio (para Windows, Mac ou Linux):
+
+1. Baixe e instale o [Android Studio](https://developer.android.com/studio).
+
+2. Durante a instalação, certifique-se de selecionar a opção para instalar o Android SDK.
+
+3. Após a instalação, abra o Android Studio e vá para "Tools" > "SDK Manager".
+
+4. Na aba "SDK Platforms", selecione a versão mais recente do Android (ou a versão que você deseja testar).
+
+5. Na aba "SDK Tools", certifique-se de que "Android SDK Build-Tools" e "Android Emulator" estão instalados.
+
+6. Clique em "Apply" para instalar os componentes selecionados.
+
+### Criando um Dispositivo Virtual Android (AVD):
+
+1. No Android Studio, vá para "Tools" > "AVD Manager".
+
+2. Clique em "Create Virtual Device".
+
+3. Escolha um dispositivo (por exemplo, Pixel 4) e clique em "Next".
+
+4. Selecione uma imagem do sistema (recomenda-se uma versão recente do Android) e clique em "Next".
+
+5. Dê um nome ao seu AVD e clique em "Finish".
+
+### Executando o Aplicativo no Emulador:
+
+1. Inicie o emulador do Android Studio abrindo o AVD Manager e clicando no botão de play ao lado do dispositivo virtual que você criou.
+
+2. No terminal do seu projeto Expo, quando o servidor de desenvolvimento estiver rodando, pressione a tecla "a" para abrir o aplicativo no emulador Android.
+
+3. O Expo irá construir o aplicativo e instalá-lo no emulador automaticamente.
+
+Lembre-se de que usar o emulador pode consumir mais recursos do seu computador em comparação com o uso de um dispositivo físico. Certifique-se de que seu computador atende aos requisitos mínimos para executar o Android Studio e o emulador.
+
+Parabéns! Agora você tem várias opções para executar e testar seu aplicativo Expo. Bom desenvolvimento!
