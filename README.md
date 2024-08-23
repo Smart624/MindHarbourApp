@@ -1,50 +1,86 @@
-# Welcome to your Expo app 👋
+# Guia Completo: Configurando seu Aplicativo Expo
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Este guia irá orientá-lo através do processo de configuração e execução do seu aplicativo Expo, mesmo que você não tenha experiência prévia em programação.
 
-## Get started
+## Pré-requisitos
 
-1. Install dependencies
+1. Instale o [Node.js](https://nodejs.org/) no seu computador.
+2. Instale o [Git](https://git-scm.com/downloads) no seu computador.
+3. Tenha um smartphone (iOS ou Android) para executar o aplicativo.
 
-   ```bash
+## Passo 1: Abra o Terminal ou Prompt de Comando
+
+- No Windows: Pressione `Win + R`, digite `cmd` e pressione Enter.
+- No macOS: Pressione `Cmd + Space`, digite `Terminal` e pressione Enter.
+- No Linux: Pressione `Ctrl + Alt + T`.
+
+## Passo 2: Navegue até o Diretório Desejado
+
+1. Use o comando `cd` para navegar até onde você deseja armazenar seu projeto.
+   Exemplo: `cd Documentos/Projetos`
+
+2. Se você não tem certeza da sua localização atual, use:
+   - No Windows: `echo %cd%`
+   - No macOS/Linux: `pwd`
+
+## Passo 3: Clone o Repositório
+
+1. Execute o seguinte comando:
+   ```
+   git clone https://github.com/Smart624/MindHarbourApp
+   ```
+
+2. Aguarde o processo de clonagem ser concluído.
+
+## Passo 4: Navegue até o Diretório do Projeto
+
+1. Execute:
+   ```
+   cd MindHarbourApp
+   ```
+
+## Passo 5: Instale as Dependências
+
+1. Execute:
+   ```
    npm install
    ```
 
-2. Start the app
+2. Isso pode levar alguns minutos. Aguarde a conclusão.
 
-   ```bash
-    npx expo start
+## Passo 6: Inicie o Servidor de Desenvolvimento Expo
+
+1. Execute:
+   ```
+   npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+2. Isso iniciará o servidor de desenvolvimento e exibirá um código QR no terminal.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Passo 7: Execute o Aplicativo no Seu Telefone
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+1. Instale o aplicativo Expo Go no seu smartphone:
+   - [Expo Go para iOS](https://apps.apple.com/app/expo-go/id982107779)
+   - [Expo Go para Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
 
-## Get a fresh project
+2. Abra o aplicativo Expo Go no seu telefone.
 
-When you're ready, run:
+3. Escaneie o código QR:
+   - iOS: Use o aplicativo de Câmera integrado para escanear o código QR.
+   - Android: Use a opção "Escanear código QR" no aplicativo Expo Go.
 
-```bash
-npm run reset-project
-```
+4. Aguarde o aplicativo carregar no seu dispositivo. Isso pode levar alguns minutos na primeira vez.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Solução de Problemas
 
-## Learn more
+- Se o aplicativo não carregar, tente fechar o Expo Go e escanear o código QR novamente.
+- Certifique-se de que seu computador e telefone estão na mesma rede Wi-Fi.
+- Se encontrar algum erro, tente parar o servidor (Ctrl+C no terminal) e executar `npx expo start` novamente.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Próximos Passos
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- O código principal do seu aplicativo está localizado no diretório `app`.
+- Para começar a desenvolver, você pode editar os arquivos neste diretório.
+- Consulte a [documentação do Expo](https://docs.expo.dev/) para obter mais informações sobre como desenvolver seu aplicativo.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Parabéns! Você configurou e executou com sucesso seu aplicativo Expo. Bom desenvolvimento!
